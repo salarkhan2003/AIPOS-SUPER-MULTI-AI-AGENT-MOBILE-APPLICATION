@@ -13,7 +13,7 @@ web-build/
 .env.local
 .env.*.local
 
-# Native
-android/
-ios/
+# Native (Expo prebuild output only)
+/android/
+/ios/
 .kotlin/
