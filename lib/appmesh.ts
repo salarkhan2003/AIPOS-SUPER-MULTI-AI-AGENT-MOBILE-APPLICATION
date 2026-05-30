@@ -40,13 +40,14 @@ export async function openAccessibilitySettings(): Promise<void> {
 }
 
 export async function deepLink(app: string, params?: Record<string, unknown>): Promise<boolean> {
-  const pkg = PACKAGES[app.toLowerCase()] ?? app;
+  const normalized = app.toLowerCase().replace(/cab|ride|taxi/, 'uber');
+  const pkg = PACKAGES[normalized] ?? PACKAGES[app.toLowerCase()] ?? app;
   const scheme =
-    app === 'whatsapp'
+    normalized === 'whatsapp' || app === 'whatsapp'
       ? `whatsapp://send?phone=${params?.phone ?? ''}&text=${encodeURIComponent(String(params?.text ?? ''))}`
-      : app === 'uber'
+      : normalized === 'uber' || app === 'uber'
         ? 'uber://'
-        : app === 'gmail'
+        : normalized === 'gmail' || app === 'gmail'
           ? 'googlegmail://'
           : `intent://#Intent;package=${pkg};end`;
 

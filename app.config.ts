@@ -27,6 +27,7 @@ const config: ExpoConfig = {
     'expo-task-manager',
     'expo-sqlite',
     'expo-dev-client',
+    './native/GhostAccessibility',
   ],
   experiments: { typedRoutes: true },
   extra: {
