@@ -1,56 +1,54 @@
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { getDb } from '@/lib/db';
+import { watchdogs } from '@/lib/watchdogs';
+import { isGhostPro } from '@/lib/entitlements';
+import { useGhostStore } from '@/store/ghostStore';
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const setPro = useGhostStore((s) => s.setPro);
 
   useEffect(() => {
-    if (loaded) {
+    (async () => {
+      await getDb();
+      await watchdogs.ensureDefaultHeartbeat();
+      await watchdogs.registerBackgroundTask();
+      const pro = await isGhostPro();
+      setPro(pro);
       SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+    })();
+  }, [setPro]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#12081F' } }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="briefing" />
+        <Stack.Screen name="command-center" />
+        <Stack.Screen name="memory-timeline" />
+        <Stack.Screen name="knowledge-graph" />
+        <Stack.Screen name="execution-monitor" />
+        <Stack.Screen name="workflow-builder" />
+        <Stack.Screen name="browser" />
+        <Stack.Screen name="email-assistant" />
+        <Stack.Screen name="notes" />
+        <Stack.Screen name="calendar" />
+        <Stack.Screen name="permissions" />
+        <Stack.Screen name="integrations" />
+        <Stack.Screen name="subscription" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="activity-logs" />
+        <Stack.Screen name="search" />
+        <Stack.Screen name="profile" />
       </Stack>
-    </ThemeProvider>
+    </>
   );
 }
