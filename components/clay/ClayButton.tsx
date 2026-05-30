@@ -1,5 +1,6 @@
-import { L } from '@/constants/light';
+import { useColors, useTheme } from '@/lib/themeContext';
 import * as Haptics from 'expo-haptics';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 interface Props {
@@ -12,8 +13,10 @@ interface Props {
 }
 
 export function ClayButton({ label, onPress, variant = 'primary', style, loading, disabled }: Props) {
+  const C = useColors();
+  const { isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const isPrimary = variant === 'primary';
-  const isSecondary = variant === 'secondary';
 
   if (variant === 'ghost') {
     return (
@@ -23,7 +26,8 @@ export function ClayButton({ label, onPress, variant = 'primary', style, loading
     );
   }
 
-  const bg = isPrimary ? L.dark : L.violet;
+  const bg = isPrimary ? (isDark ? C.violet : C.ink) : C.violet;
+  const labelColor = '#fff';
 
   return (
     <Pressable
@@ -37,27 +41,29 @@ export function ClayButton({ label, onPress, variant = 'primary', style, loading
         { backgroundColor: bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1 },
         style,
       ]}>
-      <Text style={styles.label}>{loading ? 'Please wait…' : label}</Text>
+      <Text style={[styles.label, { color: labelColor }]}>{loading ? 'Please wait…' : label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  btn: {
-    minHeight: 52,
-    borderRadius: L.radius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  label: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  ghost: { paddingVertical: 14, alignItems: 'center', marginBottom: 8 },
-  ghostText: { color: L.violet, fontSize: 15, fontWeight: '600' },
-});
+function makeStyles(C: ReturnType<typeof useColors>) {
+  return StyleSheet.create({
+    btn: {
+      minHeight: 52,
+      borderRadius: C.radius.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    label: { fontSize: 16, fontWeight: '700', color: '#fff' },
+    ghost: { paddingVertical: 14, alignItems: 'center', marginBottom: 8 },
+    ghostText: { color: C.violet, fontSize: 15, fontWeight: '600' },
+  });
+}

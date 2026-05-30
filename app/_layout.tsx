@@ -2,6 +2,8 @@ import { getSession } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { isGhostPro } from '@/lib/entitlements';
 import { initLocalNotifications, notifyLocal, scheduleDailyBriefing } from '@/lib/notifications-local';
+import { prefsStorage } from '@/lib/storage';
+import { ThemeProvider, useTheme } from '@/lib/themeContext';
 import { watchdogs } from '@/lib/watchdogs';
 import { useGhostStore } from '@/store/ghostStore';
 import { Stack } from 'expo-router';
@@ -12,7 +14,8 @@ import 'react-native-reanimated';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootNavigator() {
+  const { colors, isDark } = useTheme();
   const { setPro, setAuth, setOnboarded, setHydrated } = useGhostStore();
 
   useEffect(() => {
@@ -23,14 +26,14 @@ export default function RootLayout() {
       setAuth({
         isGuest: session.isGuest,
         isAuthenticated: session.isAuthenticated,
-        name: session.name,
+        name: session.name || 'there',
         email: session.email,
       });
 
+      const prefs = await prefsStorage.get();
       const notifOk = await initLocalNotifications();
-      if (notifOk) {
-        await scheduleDailyBriefing(7, 30);
-        await notifyLocal('Ghost OS', 'Local notifications are active.');
+      if (notifOk && prefs.notificationsEnabled) {
+        await scheduleDailyBriefing(prefs.dailyBriefingHour, 30);
       }
 
       await watchdogs.ensureDefaultHeartbeat();
@@ -44,8 +47,8 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F0EDE8' } }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
@@ -68,5 +71,13 @@ export default function RootLayout() {
         <Stack.Screen name="profile" />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
   );
 }

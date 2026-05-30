@@ -1,56 +1,63 @@
 import { Icon, type IconName } from '@/components/Icon';
-import { L } from '@/constants/light';
+import { useTheme } from '@/lib/themeContext';
 import { Href, router } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type LinkItem = { label: string; href: Href; icon: IconName; color: string; bg: string };
 
-const sections: { title: string; items: LinkItem[] }[] = [
-  {
-    title: 'AI & Agents',
-    items: [
-      { label: 'Daily Briefing', href: '/briefing', icon: 'bell', color: L.orange, bg: 'rgba(240,122,58,0.10)' },
-      { label: 'Neural Log', href: '/command-center', icon: 'network', color: L.violet, bg: 'rgba(91,79,232,0.10)' },
-      { label: 'Execution Monitor', href: '/execution-monitor', icon: 'activity', color: L.coral, bg: 'rgba(232,80,58,0.10)' },
-      { label: 'Workflows', href: '/workflow-builder', icon: 'git-branch', color: L.mint, bg: 'rgba(62,207,178,0.10)' },
-    ],
-  },
-  {
-    title: 'Knowledge',
-    items: [
-      { label: 'Timeline', href: '/memory-timeline', icon: 'activity', color: L.violet, bg: 'rgba(91,79,232,0.10)' },
-      { label: 'Knowledge Graph', href: '/knowledge-graph', icon: 'brain', color: L.coral, bg: 'rgba(232,80,58,0.10)' },
-      { label: 'Notes', href: '/notes', icon: 'file-text', color: L.orange, bg: 'rgba(240,122,58,0.10)' },
-      { label: 'Search', href: '/search', icon: 'search', color: L.dark, bg: 'rgba(0,0,0,0.06)' },
-    ],
-  },
-  {
-    title: 'Productivity',
-    items: [
-      { label: 'Calendar', href: '/calendar', icon: 'calendar', color: L.blue, bg: 'rgba(58,142,240,0.10)' },
-      { label: 'Email', href: '/email-assistant', icon: 'mail', color: L.violet, bg: 'rgba(91,79,232,0.10)' },
-      { label: 'Browser', href: '/browser', icon: 'globe', color: L.mint, bg: 'rgba(62,207,178,0.10)' },
-    ],
-  },
-  {
-    title: 'Account & Settings',
-    items: [
-      { label: 'Profile', href: '/profile', icon: 'user', color: L.dark, bg: 'rgba(0,0,0,0.06)' },
-      { label: 'Ghost Pro', href: '/subscription', icon: 'sparkles', color: L.yellow, bg: 'rgba(245,200,66,0.15)' },
-      { label: 'Integrations', href: '/integrations', icon: 'network', color: L.violet, bg: 'rgba(91,79,232,0.10)' },
-      { label: 'Permissions', href: '/permissions', icon: 'shield', color: L.coral, bg: 'rgba(232,80,58,0.10)' },
-      { label: 'Settings', href: '/settings', icon: 'settings', color: L.textMid, bg: 'rgba(0,0,0,0.06)' },
-      { label: 'Audit Logs', href: '/activity-logs', icon: 'list', color: L.textMid, bg: 'rgba(0,0,0,0.06)' },
-    ],
-  },
-];
+function buildSections(C: ReturnType<typeof useTheme>['colors']): { title: string; items: LinkItem[] }[] {
+  return [
+    {
+      title: 'AI & Agents',
+      items: [
+        { label: 'Daily Briefing', href: '/briefing', icon: 'bell', color: C.orange, bg: C.orange + '1A' },
+        { label: 'Neural Log', href: '/command-center', icon: 'network', color: C.violet, bg: C.violet + '1A' },
+        { label: 'Execution Monitor', href: '/execution-monitor', icon: 'activity', color: C.coral, bg: C.coral + '1A' },
+        { label: 'Workflows', href: '/workflow-builder', icon: 'git-branch', color: C.mint, bg: C.mint + '1A' },
+      ],
+    },
+    {
+      title: 'Knowledge',
+      items: [
+        { label: 'Timeline', href: '/memory-timeline', icon: 'activity', color: C.violet, bg: C.violet + '1A' },
+        { label: 'Knowledge Graph', href: '/knowledge-graph', icon: 'brain', color: C.coral, bg: C.coral + '1A' },
+        { label: 'Notes', href: '/notes', icon: 'file-text', color: C.orange, bg: C.orange + '1A' },
+        { label: 'Search', href: '/search', icon: 'search', color: C.text, bg: C.border },
+      ],
+    },
+    {
+      title: 'Productivity',
+      items: [
+        { label: 'Calendar', href: '/calendar', icon: 'calendar', color: C.blue, bg: C.blue + '1A' },
+        { label: 'Email', href: '/email-assistant', icon: 'mail', color: C.violet, bg: C.violet + '1A' },
+        { label: 'Browser', href: '/browser', icon: 'globe', color: C.mint, bg: C.mint + '1A' },
+      ],
+    },
+    {
+      title: 'Account & Settings',
+      items: [
+        { label: 'Profile', href: '/profile', icon: 'user', color: C.text, bg: C.border },
+        { label: 'Ghost Pro', href: '/subscription', icon: 'sparkles', color: C.yellow, bg: C.yellow + '28' },
+        { label: 'Integrations', href: '/integrations', icon: 'network', color: C.violet, bg: C.violet + '1A' },
+        { label: 'Permissions', href: '/permissions', icon: 'shield', color: C.coral, bg: C.coral + '1A' },
+        { label: 'Settings', href: '/settings', icon: 'settings', color: C.textMid, bg: C.border },
+        { label: 'Audit Logs', href: '/activity-logs', icon: 'list', color: C.textMid, bg: C.border },
+      ],
+    },
+  ];
+}
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
+  const { colors: C, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const sections = useMemo(() => buildSections(C), [C]);
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={styles.header}>
           <Text style={styles.title}>More</Text>
@@ -72,7 +79,7 @@ export default function MoreScreen() {
                     <Icon name={item.icon} size={18} color={item.color} />
                   </View>
                   <Text style={styles.rowLabel}>{item.label}</Text>
-                  <Icon name="chevron" size={16} color={L.textLight} />
+                  <Icon name="chevron" size={16} color={C.textLight} />
                 </Pressable>
               ))}
             </View>
@@ -83,20 +90,24 @@ export default function MoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: L.bg },
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
-  title: { fontSize: 28, fontWeight: '800', color: L.dark, letterSpacing: -0.5 },
-  section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionLabel: { fontSize: 11, fontWeight: '800', color: L.textLight, letterSpacing: 1.2, marginBottom: 8 },
-  sectionCard: {
-    backgroundColor: L.surface, borderRadius: L.radius.lg,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-    overflow: 'hidden',
-  },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: L.border },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  rowLabel: { flex: 1, color: L.dark, fontWeight: '600', fontSize: 15 },
-});
+function makeStyles(C: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.bg },
+    header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
+    title: { fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
+    section: { paddingHorizontal: 16, marginBottom: 24 },
+    sectionLabel: { fontSize: 11, fontWeight: '800', color: C.textLight, letterSpacing: 1.2, marginBottom: 8 },
+    sectionCard: {
+      backgroundColor: C.surface,
+      borderRadius: C.radius.lg,
+      borderWidth: 1,
+      borderColor: C.border,
+      elevation: 3,
+      overflow: 'hidden',
+    },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
+    iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    rowLabel: { flex: 1, color: C.text, fontWeight: '600', fontSize: 15 },
+  });
+}

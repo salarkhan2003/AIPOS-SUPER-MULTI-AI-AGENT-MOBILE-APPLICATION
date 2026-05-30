@@ -1,0 +1,21 @@
+/** Dark-mode design tokens — same colorful accents on deep surfaces */
+export const D = {
+  bg: '#12101A',
+  surface: '#1E1B28',
+  surfaceAlt: '#252230',
+  dark: '#F5F3FF',
+  yellow: '#F5C842',
+  coral: '#FF6B55',
+  violet: '#7B6FFF',
+  mint: '#4EECC8',
+  orange: '#FF9455',
+  blue: '#5BA3FF',
+  text: '#F5F3FF',
+  textMid: '#B8B0CC',
+  textLight: '#7A728E',
+  ink: '#0A0812',
+  onInk: '#F5F3FF',
+  border: 'rgba(255,255,255,0.08)',
+  shadow: 'rgba(0,0,0,0.35)',
+  radius: { sm: 16, md: 20, lg: 24, pill: 999 },
+} as const;

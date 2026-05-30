@@ -1,10 +1,12 @@
 import { Icon } from '@/components/Icon';
+import { formatDisplayText } from '@/lib/displayText';
 import { fetchPredictions, runGhost } from '@/lib/orchestrator';
+import { useTheme } from '@/lib/themeContext';
 import { speak } from '@/lib/voice';
 import { useGhostStore } from '@/store/ghostStore';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -20,58 +22,41 @@ const { width } = Dimensions.get('window');
 const CARD_GAP = 12;
 const HALF = (width - 32 - CARD_GAP) / 2;
 
-// Light-mode palette matching the screenshot aesthetic
-const L = {
-  bg: '#F0EDE8',
-  surface: '#FFFFFF',
-  dark: '#1A1A1A',
-  yellow: '#F5C842',
-  coral: '#E8503A',
-  violet: '#5B4FE8',
-  mint: '#3ECFB2',
-  cream: '#FAF7F0',
-  orange: '#F07A3A',
-  text: '#1A1A1A',
-  textMid: '#555555',
-  textLight: '#999999',
-  border: 'rgba(0,0,0,0.08)',
-};
-
-function Widget({
-  children,
-  style,
-  onPress,
-}: {
-  children: React.ReactNode;
-  style?: object;
-  onPress?: () => void;
-}) {
-  const inner = (
-    <View style={[styles.widget, style]}>{children}</View>
-  );
-  if (!onPress) return inner;
-  return (
-    <Pressable
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress();
-      }}
-      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      {inner}
-    </Pressable>
-  );
-}
-
-function Tag({ label, color, bg }: { label: string; color: string; bg: string }) {
-  return (
-    <View style={[styles.tag, { backgroundColor: bg }]}>
-      <Text style={[styles.tagText, { color }]}>{label}</Text>
-    </View>
-  );
-}
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { colors: C, isDark } = useTheme();
+  const styles = useMemo(() => createHomeStyles(C), [C]);
+
+  function Widget({
+    children,
+    style,
+    onPress,
+  }: {
+    children: React.ReactNode;
+    style?: object;
+    onPress?: () => void;
+  }) {
+    const inner = <View style={[styles.widget, style]}>{children}</View>;
+    if (!onPress) return inner;
+    return (
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        {inner}
+      </Pressable>
+    );
+  }
+
+  function Tag({ label, color, bg }: { label: string; color: string; bg: string }) {
+    return (
+      <View style={[styles.tag, { backgroundColor: bg }]}>
+        <Text style={[styles.tagText, { color }]}>{label}</Text>
+      </View>
+    );
+  }
   const predictions = useGhostStore((s) => s.predictions);
   const user = useGhostStore((s) => s.user);
   const setPredictions = useGhostStore((s) => s.setPredictions);
@@ -88,22 +73,24 @@ export default function HomeScreen() {
     try {
       const { finalMessage, thoughts } = await runGhost(text);
       thoughts.forEach((t) => useGhostStore.getState().addThought(t));
-      speak(finalMessage);
-    } catch {
-      speak('Something went wrong.');
+      speak(formatDisplayText(finalMessage));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      speak(msg);
     } finally {
       setLoading(false);
       setActiveTask(null);
     }
   };
 
-  const firstName = user.name?.split(' ')[0] ?? 'there';
+  const displayName = user.name?.trim();
+  const firstName = displayName && displayName !== 'Guest' ? displayName.split(' ')[0] : 'there';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}>
@@ -116,7 +103,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.headerRight}>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/search')}>
-              <Icon name="search" size={20} color={L.dark} />
+              <Icon name="search" size={20} color={C.text} />
             </Pressable>
             <Pressable style={[styles.iconBtn, { marginLeft: 8 }]} onPress={() => router.push('/profile')}>
               <View style={styles.avatar}>
@@ -129,15 +116,15 @@ export default function HomeScreen() {
         {/* ── AI Alert Banner ── */}
         {predictions[0] && (
           <Widget
-            style={{ backgroundColor: L.dark, marginBottom: CARD_GAP }}
+            style={{ backgroundColor: C.ink, marginBottom: CARD_GAP }}
             onPress={() => run(predictions[0].action ?? predictions[0].title)}>
             <View style={styles.alertRow}>
-              <View style={[styles.alertDot, { backgroundColor: L.yellow }]} />
+              <View style={[styles.alertDot, { backgroundColor: C.yellow }]} />
               <Text style={styles.alertLabel} numberOfLines={1}>
                 {predictions[0].title.toUpperCase()}
               </Text>
               <View style={styles.alertArrow}>
-                <Icon name="arrow-up-right" size={14} color={L.dark} />
+                <Icon name="arrow-up-right" size={14} color={C.dark} />
               </View>
             </View>
             <Text style={styles.alertSub} numberOfLines={2}>
@@ -155,7 +142,7 @@ export default function HomeScreen() {
         <View style={styles.row}>
           {/* Credits widget */}
           <Widget
-            style={[styles.halfCard, { backgroundColor: L.violet, marginRight: CARD_GAP }]}
+            style={[styles.halfCard, { backgroundColor: C.violet, marginRight: CARD_GAP }]}
             onPress={() => router.push('/subscription')}>
             <Text style={styles.widgetLabelLight}>CREDITS</Text>
             <Text style={styles.widgetBigLight}>
@@ -176,20 +163,20 @@ export default function HomeScreen() {
 
           {/* Tasks widget */}
           <Widget
-            style={[styles.halfCard, { backgroundColor: L.yellow }]}
+            style={[styles.halfCard, { backgroundColor: C.yellow }]}
             onPress={() => router.push('/tasks')}>
             <Text style={styles.widgetLabelDark}>TASKS</Text>
             <Text style={styles.widgetBigDark}>Active</Text>
             <View style={{ marginTop: 8 }}>
-              <Tag label="Planner" color={L.dark} bg="rgba(0,0,0,0.12)" />
-              <Tag label="Executor" color={L.dark} bg="rgba(0,0,0,0.12)" />
+              <Tag label="Planner" color={C.dark} bg="rgba(0,0,0,0.12)" />
+              <Tag label="Executor" color={C.dark} bg="rgba(0,0,0,0.12)" />
             </View>
           </Widget>
         </View>
 
         {/* ── Memory / Knowledge wide card ── */}
         <Widget
-          style={{ backgroundColor: L.coral, marginBottom: CARD_GAP }}
+          style={{ backgroundColor: C.coral, marginBottom: CARD_GAP }}
           onPress={() => router.push('/memory')}>
           <View style={styles.wideCardRow}>
             <View style={{ flex: 1 }}>
@@ -203,7 +190,7 @@ export default function HomeScreen() {
             <Pressable
               style={styles.wideArrow}
               onPress={() => router.push('/knowledge-graph')}>
-              <Icon name="arrow-up-right" size={16} color={L.coral} />
+              <Icon name="arrow-up-right" size={16} color={C.coral} />
             </Pressable>
           </View>
         </Widget>
@@ -212,25 +199,25 @@ export default function HomeScreen() {
         <View style={styles.row}>
           {/* Voice widget */}
           <Widget
-            style={[styles.halfCard, { backgroundColor: L.mint, marginRight: CARD_GAP }]}
+            style={[styles.halfCard, { backgroundColor: C.mint, marginRight: CARD_GAP }]}
             onPress={() => router.push('/voice')}>
             <Text style={styles.widgetLabelDark}>VOICE</Text>
             <View style={styles.voiceOrb}>
-              <Icon name="mic" size={28} color={L.mint} />
+              <Icon name="mic" size={28} color={C.mint} />
             </View>
             <Text style={[styles.widgetSubDark, { marginTop: 8 }]}>Tap to speak</Text>
           </Widget>
 
           {/* Briefing widget */}
           <Widget
-            style={[styles.halfCard, { backgroundColor: L.cream, borderWidth: 1, borderColor: L.border }]}
+            style={[styles.halfCard, { backgroundColor: C.surfaceAlt, borderWidth: 1, borderColor: C.border }]}
             onPress={() => router.push('/briefing')}>
-            <Text style={[styles.widgetLabelDark, { color: L.textMid }]}>BRIEFING</Text>
+            <Text style={[styles.widgetLabelDark, { color: C.textMid }]}>BRIEFING</Text>
             <Text style={[styles.widgetBigDark, { fontSize: 18, lineHeight: 24 }]}>
               Daily{'\n'}Digest
             </Text>
             <View style={{ marginTop: 8 }}>
-              <Tag label="Ready" color={L.violet} bg="rgba(91,79,232,0.12)" />
+              <Tag label="Ready" color={C.violet} bg="rgba(91,79,232,0.12)" />
             </View>
           </Widget>
         </View>
@@ -239,7 +226,7 @@ export default function HomeScreen() {
         {predictions.slice(1).map((p) => (
           <Widget
             key={p.id}
-            style={{ backgroundColor: L.surface, borderWidth: 1, borderColor: L.border, marginBottom: CARD_GAP }}
+            style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, marginBottom: CARD_GAP }}
             onPress={() => run(p.action ?? p.title)}>
             <View style={styles.predRow}>
               <View style={styles.predDot} />
@@ -248,7 +235,7 @@ export default function HomeScreen() {
                 <Text style={styles.predSub} numberOfLines={2}>{p.subtitle}</Text>
               </View>
               <View style={styles.predArrow}>
-                <Icon name="arrow-up-right" size={14} color={L.dark} />
+                <Icon name="arrow-up-right" size={14} color={C.dark} />
               </View>
             </View>
           </Widget>
@@ -258,13 +245,13 @@ export default function HomeScreen() {
         <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
         <View style={styles.row}>
           <Pressable
-            style={[styles.quickBtn, { backgroundColor: L.dark, flex: 1, marginRight: CARD_GAP / 2 }]}
+            style={[styles.quickBtn, { backgroundColor: C.ink, flex: 1, marginRight: CARD_GAP / 2 }]}
             onPress={() => run("text Mom I'm reaching in 10min")}>
             <Icon name="message-circle" size={18} color="#fff" />
             <Text style={styles.quickBtnText}>Text Mom</Text>
           </Pressable>
           <Pressable
-            style={[styles.quickBtn, { backgroundColor: L.orange, flex: 1, marginLeft: CARD_GAP / 2 }]}
+            style={[styles.quickBtn, { backgroundColor: C.orange, flex: 1, marginLeft: CARD_GAP / 2 }]}
             onPress={() => run('book cab to station')}>
             <Icon name="navigation" size={18} color="#fff" />
             <Text style={styles.quickBtnText}>Book Cab</Text>
@@ -274,10 +261,10 @@ export default function HomeScreen() {
         {/* ── Nav shortcuts ── */}
         <View style={styles.shortcutGrid}>
           {[
-            { label: 'Command', icon: 'terminal', route: '/command-center', bg: L.violet },
-            { label: 'Calendar', icon: 'calendar', route: '/calendar', bg: L.coral },
-            { label: 'Notes', icon: 'file-text', route: '/notes', bg: L.mint },
-            { label: 'Workflows', icon: 'git-branch', route: '/workflow-builder', bg: L.yellow },
+            { label: 'Command', icon: 'terminal', route: '/command-center', bg: C.violet },
+            { label: 'Calendar', icon: 'calendar', route: '/calendar', bg: C.coral },
+            { label: 'Notes', icon: 'file-text', route: '/notes', bg: C.mint },
+            { label: 'Workflows', icon: 'git-branch', route: '/workflow-builder', bg: C.yellow },
           ].map((item) => (
             <Pressable
               key={item.route}
@@ -286,8 +273,8 @@ export default function HomeScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push(item.route as any);
               }}>
-              <Icon name={item.icon as any} size={22} color={item.bg === L.yellow ? L.dark : '#fff'} />
-              <Text style={[styles.shortcutLabel, { color: item.bg === L.yellow ? L.dark : '#fff' }]}>
+              <Icon name={item.icon as any} size={22} color={item.bg === C.yellow ? C.dark : '#fff'} />
+              <Text style={[styles.shortcutLabel, { color: item.bg === C.yellow ? C.dark : '#fff' }]}>
                 {item.label}
               </Text>
             </Pressable>
@@ -298,8 +285,9 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: L.bg },
+function createHomeStyles(C: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.bg },
   scroll: { paddingHorizontal: 16, paddingTop: 8 },
 
   // Header
@@ -309,14 +297,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  greetSmall: { fontSize: 13, color: L.textMid, fontWeight: '500' },
-  greetName: { fontSize: 26, fontWeight: '800', color: L.dark, letterSpacing: -0.5 },
+  greetSmall: { fontSize: 13, color: C.textMid, fontWeight: '500' },
+  greetName: { fontSize: 26, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: L.surface,
+    backgroundColor: C.surface,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -329,7 +317,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: L.violet,
+    backgroundColor: C.violet,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -354,7 +342,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: L.yellow,
+    backgroundColor: C.yellow,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -367,7 +355,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  runningText: { color: L.yellow, fontSize: 12, fontWeight: '600' },
+  runningText: { color: C.yellow, fontSize: 12, fontWeight: '600' },
 
   // Row layout
   row: { flexDirection: 'row', marginBottom: CARD_GAP },
@@ -387,7 +375,7 @@ const styles = StyleSheet.create({
   widgetLabelLight: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
   widgetLabelDark: { color: 'rgba(0,0,0,0.5)', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
   widgetBigLight: { color: '#fff', fontSize: 36, fontWeight: '800', letterSpacing: -1 },
-  widgetBigDark: { color: L.dark, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  widgetBigDark: { color: C.dark, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
   widgetSubLight: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 },
   widgetSubDark: { color: 'rgba(0,0,0,0.5)', fontSize: 12 },
 
@@ -422,7 +410,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: L.dark,
+    backgroundColor: C.ink,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
@@ -434,14 +422,14 @@ const styles = StyleSheet.create({
 
   // Predictions
   predRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  predDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: L.violet },
-  predTitle: { color: L.dark, fontWeight: '700', fontSize: 15 },
-  predSub: { color: L.textMid, fontSize: 13, marginTop: 2 },
+  predDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.violet },
+  predTitle: { color: C.dark, fontWeight: '700', fontSize: 15 },
+  predSub: { color: C.textMid, fontSize: 13, marginTop: 2 },
   predArrow: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: L.bg,
+    backgroundColor: C.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -450,7 +438,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: L.textLight,
+    color: C.textLight,
     letterSpacing: 1.2,
     marginBottom: 10,
     marginTop: 4,
@@ -491,4 +479,5 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   shortcutLabel: { fontSize: 14, fontWeight: '700' },
-});
+  });
+}

@@ -13,6 +13,9 @@ export const L = {
   text: '#1A1A1A',
   textMid: '#555555',
   textLight: '#999999',
+  /** Dark surfaces (banners, primary buttons) — same in both themes */
+  ink: '#1A1A1A',
+  onInk: '#FFFFFF',
   border: 'rgba(0,0,0,0.08)',
   shadow: 'rgba(0,0,0,0.10)',
   radius: { sm: 16, md: 20, lg: 24, pill: 999 },

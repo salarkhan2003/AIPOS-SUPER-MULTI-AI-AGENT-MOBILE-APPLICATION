@@ -2,15 +2,17 @@
  * Ghost Orchestrator — 8 agents via Groq JSON mode
  * Flow: User Input → Planner → Research → Executor → Verifier → Response
  */
-import { notifyLocal } from '@/lib/notifications-local';
 import * as appmesh from '@/lib/appmesh';
 import { logAudit } from '@/lib/audit';
-import { ghostEvents, EVENTS } from '@/lib/events';
-import { groqChat, parseAgentJson } from '@/lib/groq';
+import { formatDisplayText } from '@/lib/displayText';
+import { uuid } from '@/lib/db';
+import { EVENTS, ghostEvents } from '@/lib/events';
+import { formatGroqError, groqChat, groqSimpleReply, parseAgentJson } from '@/lib/groq';
 import { memory } from '@/lib/memory';
+import { notifyLocal } from '@/lib/notifications-local';
+import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { watchdogs } from '@/lib/watchdogs';
 import type { AgentRole, OrchestratorResponse, ThoughtEvent } from '@/types';
-import { uuid } from '@/lib/db';
 
 const MAX_STEPS = 6;
 
@@ -41,7 +43,7 @@ async function callAgent(
   const raw = await groqChat([
     {
       role: 'user',
-      content: `Agent role: ${agent}. User said: "${userInput}". Context: ${context}. Return next JSON action for this agent only.`,
+      content: `Agent role: ${agent}. User said: "${userInput}". Context: ${context.slice(0, 1500)}. Return next JSON action for this agent only.`,
     },
   ]);
   const parsed = parseAgentJson(raw);
@@ -60,7 +62,15 @@ export async function executeTool(
 ): Promise<string> {
   switch (action) {
     case 'deep_link': {
-      const app = String(params.app ?? '');
+      const app = String(params.app ?? '').toLowerCase();
+      if (app.includes('whatsapp')) {
+        const contact = String(params.contact ?? params.to ?? params.name ?? '');
+        const text = String(params.text ?? params.message ?? '');
+        if (contact) {
+          const { ok, detail } = await sendWhatsAppMessage(contact, text);
+          return detail;
+        }
+      }
       const ok = await appmesh.deepLink(app, params);
       return ok ? `Opened ${app}` : `Failed to open ${app}`;
     }
@@ -104,7 +114,14 @@ export async function executeTool(
     case 'memory_search': {
       const q = String(params.query ?? '');
       const hits = await memory.search(q, Number(params.k ?? 5));
-      return JSON.stringify(hits.map((h) => ({ id: h.id, text: h.text.slice(0, 200) })));
+      if (!hits.length) return 'No memories found for that query.';
+      return hits.map((h) => `• ${h.text.slice(0, 200)}`).join('\n');
+    }
+    case 'whatsapp_send': {
+      const contact = String(params.contact ?? params.to ?? params.name ?? '');
+      const message = String(params.message ?? params.text ?? '');
+      const { ok, detail } = await sendWhatsAppMessage(contact, message);
+      return detail;
     }
     case 'send_notification': {
       await notifyLocal(String(params.title ?? 'Ghost'), String(params.body ?? ''));
@@ -119,8 +136,7 @@ export async function executeTool(
   }
 }
 
-/** Main entry: process natural language command */
-export async function runGhost(userInput: string): Promise<{
+async function runGhostInner(userInput: string): Promise<{
   finalMessage: string;
   thoughts: ThoughtEvent[];
 }> {
@@ -156,7 +172,7 @@ export async function runGhost(userInput: string): Promise<{
     }
 
     const execAgent: AgentRole = step.agent === 'planner' ? 'executor' : (step.agent as AgentRole);
-    if (['deep_link', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text'].includes(step.action)) {
+    if (['deep_link', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text', 'whatsapp_send'].includes(step.action)) {
       const result = await executeTool(step.action, step.params);
       await logAudit(execAgent, step.action, step.params, result, 20);
       thoughts.push(emitThought('executor', result, step));
@@ -184,7 +200,39 @@ export async function runGhost(userInput: string): Promise<{
   await memory.add(`User: ${userInput} → Ghost: ${finalMessage}`, 'episodic');
   await logAudit('executor', 'ghost_run', { input: userInput }, finalMessage, 5);
 
+  finalMessage = formatDisplayText(finalMessage);
+
   return { finalMessage, thoughts };
+}
+
+/** Main entry: process natural language command */
+export async function runGhost(userInput: string): Promise<{
+  finalMessage: string;
+  thoughts: ThoughtEvent[];
+}> {
+  try {
+    return await runGhostInner(userInput);
+  } catch (err) {
+    const friendly = formatGroqError(err);
+    try {
+      const simple = await groqSimpleReply(userInput);
+      const t: ThoughtEvent = {
+        id: uuid(),
+        timestamp: Date.now(),
+        agent: 'planner',
+        message: simple,
+      };
+      return { finalMessage: formatDisplayText(simple), thoughts: [t] };
+    } catch {
+      const t: ThoughtEvent = {
+        id: uuid(),
+        timestamp: Date.now(),
+        agent: 'planner',
+        message: friendly,
+      };
+      return { finalMessage: friendly, thoughts: [t] };
+    }
+  }
 }
 
 /** Home screen predictions from Planner */

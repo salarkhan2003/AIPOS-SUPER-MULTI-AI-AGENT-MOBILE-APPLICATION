@@ -1,9 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/Icon';
+import { L } from '@/constants/light';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ClayBackground } from './ClayBackground';
-import { theme } from '@/constants/theme';
 
 interface Props {
   title: string;
@@ -25,24 +24,29 @@ export function ScreenShell({
   contentStyle,
 }: Props) {
   const insets = useSafeAreaInsets();
+
+  const header = (
+    <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      {showBack ? (
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <Icon name="back" size={20} color={L.dark} />
+        </Pressable>
+      ) : (
+        <View style={styles.backPlaceholder} />
+      )}
+      <View style={styles.headerText}>
+        <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      <View style={styles.right}>{rightAction}</View>
+    </View>
+  );
+
   const body = <View style={[styles.content, contentStyle]}>{children}</View>;
 
   return (
-    <ClayBackground>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        {showBack ? (
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.text.primary} />
-          </Pressable>
-        ) : (
-          <View style={styles.backPlaceholder} />
-        )}
-        <View style={styles.headerText}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-        <View style={styles.right}>{rightAction}</View>
-      </View>
+    <View style={styles.root}>
+      {header}
       {scroll ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -52,30 +56,36 @@ export function ScreenShell({
       ) : (
         <View style={[styles.scroll, { paddingBottom: insets.bottom + 24, flex: 1 }]}>{body}</View>
       )}
-    </ClayBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: L.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: L.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  backPlaceholder: { width: 44 },
-  headerText: { flex: 1, marginHorizontal: theme.spacing.sm },
-  title: { ...theme.typography.h1, color: theme.colors.text.primary },
-  subtitle: { ...theme.typography.caption, color: theme.colors.text.secondary, marginTop: 2 },
-  right: { minWidth: 44, alignItems: 'flex-end' },
-  scroll: { paddingHorizontal: theme.spacing.md },
-  content: { gap: theme.spacing.md },
+  backPlaceholder: { width: 40 },
+  headerText: { flex: 1, marginHorizontal: 12 },
+  title: { fontSize: 22, fontWeight: '800', color: L.dark, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: L.textMid, marginTop: 2 },
+  right: { minWidth: 40, alignItems: 'flex-end' },
+  scroll: { paddingHorizontal: 16 },
+  content: { gap: 12 },
 });

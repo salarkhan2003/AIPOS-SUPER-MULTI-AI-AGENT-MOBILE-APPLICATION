@@ -18,6 +18,7 @@ interface GhostState {
   setAuth: (p: { isGuest: boolean; isAuthenticated: boolean; name?: string; email?: string }) => void;
   setOnboarded: (v: boolean) => void;
   setHydrated: (v: boolean) => void;
+  resetStore: () => void;
 }
 
 export const useGhostStore = create<GhostState>((set) => ({
@@ -56,6 +57,17 @@ export const useGhostStore = create<GhostState>((set) => ({
     })),
   setOnboarded: (hasOnboarded) => set({ hasOnboarded }),
   setHydrated: (hydrated) => set({ hydrated }),
+  resetStore: () =>
+    set({
+      user: { name: '', email: '', plan: 'free', creditsUsed: 0, creditsTotal: 50 },
+      thoughts: [],
+      tasks: [],
+      predictions: [],
+      isPro: false,
+      isGuest: true,
+      isAuthenticated: false,
+      hasOnboarded: false,
+    }),
 }));
 
 export type { AuditLogEntry };

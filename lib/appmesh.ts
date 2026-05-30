@@ -2,6 +2,7 @@
  * App Mesh — JS bridge to Android AccessibilityService
  * Requires dev build with ghost-accessibility native module.
  */
+import { normalizePhone } from '@/lib/whatsapp';
 import { Linking, Platform } from 'react-native';
 
 const PACKAGES: Record<string, string> = {
@@ -50,9 +51,10 @@ export async function openAccessibilitySettings(): Promise<void> {
 export async function deepLink(app: string, params?: Record<string, unknown>): Promise<boolean> {
   const normalized = app.toLowerCase().replace(/cab|ride|taxi/, 'uber');
   const pkg = PACKAGES[normalized] ?? PACKAGES[app.toLowerCase()] ?? app;
+  const waPhone = params?.phone ? normalizePhone(String(params.phone)) : '';
   const scheme =
     normalized === 'whatsapp' || app === 'whatsapp'
-      ? `whatsapp://send?phone=${params?.phone ?? ''}&text=${encodeURIComponent(String(params?.text ?? ''))}`
+      ? `whatsapp://send?phone=${waPhone}&text=${encodeURIComponent(String(params?.text ?? params?.message ?? ''))}`
       : normalized === 'uber' || app === 'uber'
         ? 'uber://'
         : normalized === 'gmail' || app === 'gmail'

@@ -81,6 +81,13 @@ export default function PermissionsScreen() {
               thumbColor="#fff"
             />
           </View>
+          <Text style={styles.instructTitle}>Setup (APK / production)</Text>
+          <Text style={styles.instructBody}>
+            1. Tap the switch above and choose Allow{'\n'}
+            2. Android: Settings → Apps → Ghost AI → Notifications → On{'\n'}
+            3. In Ghost: Settings → Notifications → enter title & message → Send notification{'\n'}
+            4. Briefings and task alerts use the same permission
+          </Text>
         </View>
 
         {/* Info */}
@@ -112,4 +119,6 @@ const styles = StyleSheet.create({
   actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginHorizontal: 16, backgroundColor: 'rgba(91,79,232,0.06)', borderRadius: L.radius.lg, padding: 14 },
   infoText: { color: L.violet, fontSize: 13, flex: 1, lineHeight: 18 },
+  instructTitle: { color: L.dark, fontWeight: '800', fontSize: 13, marginTop: 12, marginBottom: 6 },
+  instructBody: { color: L.textMid, fontSize: 12, lineHeight: 20 },
 });

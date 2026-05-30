@@ -1,12 +1,13 @@
+import { getInitialRoute } from '@/lib/auth';
+import { useColors } from '@/lib/themeContext';
+import { useGhostStore } from '@/store/ghostStore';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Clay } from '@/constants/clay';
-import { getInitialRoute } from '@/lib/auth';
-import { useGhostStore } from '@/store/ghostStore';
 
 export default function Index() {
   const hydrated = useGhostStore((s) => s.hydrated);
+  const C = useColors();
   const [route, setRoute] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,8 +16,8 @@ export default function Index() {
 
   if (!hydrated || !route) {
     return (
-      <View style={{ flex: 1, backgroundColor: Clay.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={Clay.accent} size="large" />
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={C.violet} size="large" />
       </View>
     );
   }
