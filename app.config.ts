@@ -10,24 +10,16 @@ const config: ExpoConfig = {
   ios: { supportsTablet: true, bundleIdentifier: 'ai.aipos.app' },
   android: {
     package: 'ai.aipos.app',
-    permissions: [
-      'RECORD_AUDIO',
-      'FOREGROUND_SERVICE',
-      'RECEIVE_BOOT_COMPLETED',
-      'POST_NOTIFICATIONS',
-    ],
+    permissions: ['RECORD_AUDIO', 'POST_NOTIFICATIONS'],
   },
   plugins: [
     'expo-router',
-    [
-      'expo-notifications',
-      { icon: './assets/images/icon.png', color: '#12081F' },
-    ],
+    ['expo-splash-screen', { image: './assets/images/splash-icon.png', resizeMode: 'contain', backgroundColor: '#12081F' }],
+    ['expo-notifications', { icon: './assets/images/icon.png', color: '#12081F' }],
     'expo-background-fetch',
     'expo-task-manager',
     'expo-sqlite',
-    'expo-dev-client',
-    './native/GhostAccessibility',
+    'expo-secure-store',
   ],
   experiments: { typedRoutes: true },
   extra: {

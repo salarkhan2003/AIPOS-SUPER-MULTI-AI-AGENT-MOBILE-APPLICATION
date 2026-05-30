@@ -3,7 +3,6 @@
  * Requires dev build with ghost-accessibility native module.
  */
 import { Linking, Platform } from 'react-native';
-import GhostAccessibility from '../native/GhostAccessibility/src';
 
 const PACKAGES: Record<string, string> = {
   uber: 'com.ubercab',
@@ -20,7 +19,16 @@ type AccessibilityNative = {
   openAccessibilitySettings: () => Promise<void>;
 };
 
-const Native: AccessibilityNative | undefined = GhostAccessibility ?? undefined;
+const Native: AccessibilityNative | undefined = (() => {
+  try {
+    const { requireOptionalNativeModule } = require('expo-modules-core') as {
+      requireOptionalNativeModule: <T>(name: string) => T | null;
+    };
+    return requireOptionalNativeModule<AccessibilityNative>('GhostAccessibility') ?? undefined;
+  } catch {
+    return undefined;
+  }
+})();
 
 export async function isAccessibilityEnabled(): Promise<boolean> {
   if (Platform.OS !== 'android' || !Native) return false;

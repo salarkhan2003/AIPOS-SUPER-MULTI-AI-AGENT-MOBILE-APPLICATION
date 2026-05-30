@@ -1,20 +1,65 @@
-import { useEffect, useState } from 'react';
-import { Text } from 'react-native';
-import { BasicScreen, Card } from '@/components/Screen';
-import { B } from '@/constants/basic';
+import { Icon } from '@/components/Icon';
+import { L } from '@/constants/light';
 import { listAuditLogs } from '@/lib/audit';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+type Log = Awaited<ReturnType<typeof listAuditLogs>>[number];
 
 export default function ActivityLogsScreen() {
-  const [logs, setLogs] = useState<Awaited<ReturnType<typeof listAuditLogs>>>([]);
+  const insets = useSafeAreaInsets();
+  const [logs, setLogs] = useState<Log[]>([]);
+
   useEffect(() => { listAuditLogs(100).then(setLogs); }, []);
+
   return (
-    <BasicScreen title="Audit Trail">
-      {logs.map((l) => (
-        <Card key={l.id}>
-          <Text style={{ color: B.dim, fontSize: 11 }}>{new Date(l.timestamp).toLocaleString()}</Text>
-          <Text style={{ color: B.text }}>{l.action} — {l.result}</Text>
-        </Card>
-      ))}
-    </BasicScreen>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <Icon name="back" size={20} color={L.dark} />
+        </Pressable>
+        <View>
+          <Text style={styles.title}>Audit Trail</Text>
+          <Text style={styles.subtitle}>{logs.length} entries</Text>
+        </View>
+      </View>
+
+      <FlatList
+        data={logs}
+        keyExtractor={(l) => l.id}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Icon name="list" size={32} color={L.textLight} />
+            <Text style={styles.emptyText}>No activity yet</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.time}>{new Date(item.timestamp).toLocaleString('en-IN')}</Text>
+            <Text style={styles.action}>{item.action}</Text>
+            {item.result ? <Text style={styles.result} numberOfLines={2}>{item.result}</Text> : null}
+          </View>
+        )}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: L.bg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: L.surface, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 },
+  title: { fontSize: 24, fontWeight: '800', color: L.dark, letterSpacing: -0.5 },
+  subtitle: { color: L.textMid, fontSize: 13 },
+  card: { backgroundColor: L.surface, borderRadius: L.radius.lg, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  time: { color: L.textLight, fontSize: 11, fontWeight: '600', marginBottom: 4 },
+  action: { color: L.dark, fontWeight: '700', fontSize: 14 },
+  result: { color: L.textMid, fontSize: 12, marginTop: 4, lineHeight: 18 },
+  empty: { alignItems: 'center', marginTop: 80, gap: 12 },
+  emptyText: { color: L.textLight, fontSize: 14 },
+});

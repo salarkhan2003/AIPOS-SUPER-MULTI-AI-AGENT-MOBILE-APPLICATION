@@ -1,33 +1,51 @@
+import { getSession } from '@/lib/auth';
+import { getDb } from '@/lib/db';
+import { isGhostPro } from '@/lib/entitlements';
+import { initLocalNotifications, notifyLocal, scheduleDailyBriefing } from '@/lib/notifications-local';
+import { watchdogs } from '@/lib/watchdogs';
+import { useGhostStore } from '@/store/ghostStore';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { getDb } from '@/lib/db';
-import { watchdogs } from '@/lib/watchdogs';
-import { isGhostPro } from '@/lib/entitlements';
-import { useGhostStore } from '@/store/ghostStore';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const setPro = useGhostStore((s) => s.setPro);
+  const { setPro, setAuth, setOnboarded, setHydrated } = useGhostStore();
 
   useEffect(() => {
     (async () => {
       await getDb();
+      const session = await getSession();
+      setOnboarded(session.hasOnboarded);
+      setAuth({
+        isGuest: session.isGuest,
+        isAuthenticated: session.isAuthenticated,
+        name: session.name,
+        email: session.email,
+      });
+
+      const notifOk = await initLocalNotifications();
+      if (notifOk) {
+        await scheduleDailyBriefing(7, 30);
+        await notifyLocal('Ghost OS', 'Local notifications are active.');
+      }
+
       await watchdogs.ensureDefaultHeartbeat();
       await watchdogs.registerBackgroundTask();
       const pro = await isGhostPro();
       setPro(pro);
+      setHydrated(true);
       SplashScreen.hideAsync();
     })();
-  }, [setPro]);
+  }, [setPro, setAuth, setOnboarded, setHydrated]);
 
   return (
     <>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#12081F' } }}>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F0EDE8' } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />

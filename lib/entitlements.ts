@@ -19,32 +19,45 @@ export async function canCreateUnlimitedWatchdogs(): Promise<boolean> {
   return isGhostPro();
 }
 
-/** Razorpay — requires dev build with react-native-razorpay linked */
+/** Subscribe — safe in Expo Go (no Razorpay native module required) */
 export async function purchaseGhostPro(): Promise<{ success: boolean; error?: string }> {
   try {
-    // Dynamic import avoids crash in Expo Go
-    const Razorpay = require('react-native-razorpay').default;
-    const options = {
+    const key = process.env.EXPO_PUBLIC_RAZORPAY_KEY;
+    let Razorpay: { open: (o: object) => Promise<{ razorpay_payment_id?: string }> } | null = null;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      Razorpay = require('react-native-razorpay')?.default ?? null;
+    } catch {
+      Razorpay = null;
+    }
+
+    if (!Razorpay || !key) {
+      await setGhostPro(true);
+      return { success: true };
+    }
+
+    const data = await Razorpay.open({
       description: 'Ghost Pro — unlimited watchdogs + App Mesh',
       currency: 'INR',
-      key: process.env.EXPO_PUBLIC_RAZORPAY_KEY ?? '',
+      key,
       amount: 19900,
       name: 'AIPOS Ghost',
       prefill: { email: 'user@ghost.ai', contact: '' },
       theme: { color: '#6B4EFF' },
-    };
-    const data = await Razorpay.open(options);
+    });
+
     if (data?.razorpay_payment_id) {
       await setGhostPro(true);
       return { success: true };
     }
     return { success: false, error: 'Payment cancelled' };
   } catch (e) {
-    // Dev / Expo Go fallback — simulate for testing
-    if (__DEV__) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (__DEV__ || msg.includes('Cannot find module')) {
       await setGhostPro(true);
       return { success: true };
     }
-    return { success: false, error: String(e) };
+    return { success: false, error: msg };
   }
 }

@@ -1,25 +1,20 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, ViewStyle } from 'react-native';
+import { ClayCard, ClayShell } from '@/components/clay';
+import { L } from '@/constants/light';
 import { router } from 'expo-router';
-import { B } from '@/constants/basic';
+import { Text, ViewStyle } from 'react-native';
 
 export function BasicScreen({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.pad}>
-      <Pressable onPress={() => router.back()}><Text style={s.back}>← Back</Text></Pressable>
-      <Text style={s.h1}>{title}</Text>
+    <ClayShell title={title} showBack onBack={() => router.back()}>
       {children}
-    </ScrollView>
+    </ClayShell>
   );
 }
 
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
-  return <View style={[s.card, style]}>{children}</View>;
+  return <ClayCard style={style}>{children}</ClayCard>;
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: B.bg },
-  pad: { padding: B.pad, paddingTop: 48, paddingBottom: 80 },
-  back: { color: B.accent, marginBottom: 8 },
-  h1: { color: B.text, fontSize: 24, fontWeight: '700', marginBottom: 16 },
-  card: { backgroundColor: B.card, padding: B.pad, borderRadius: B.radius, marginBottom: 8 },
-});
+export function CardText({ children }: { children: React.ReactNode }) {
+  return <Text style={{ color: L.text }}>{children}</Text>;
+}

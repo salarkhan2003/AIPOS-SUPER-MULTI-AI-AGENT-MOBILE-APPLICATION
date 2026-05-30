@@ -2,7 +2,7 @@
  * Ghost Orchestrator — 8 agents via Groq JSON mode
  * Flow: User Input → Planner → Research → Executor → Verifier → Response
  */
-import * as Notifications from 'expo-notifications';
+import { notifyLocal } from '@/lib/notifications-local';
 import * as appmesh from '@/lib/appmesh';
 import { logAudit } from '@/lib/audit';
 import { ghostEvents, EVENTS } from '@/lib/events';
@@ -107,13 +107,7 @@ export async function executeTool(
       return JSON.stringify(hits.map((h) => ({ id: h.id, text: h.text.slice(0, 200) })));
     }
     case 'send_notification': {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: String(params.title ?? 'Ghost'),
-          body: String(params.body ?? ''),
-        },
-        trigger: null,
-      });
+      await notifyLocal(String(params.title ?? 'Ghost'), String(params.body ?? ''));
       return 'Notification sent';
     }
     case 'browser_command':

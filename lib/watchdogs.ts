@@ -1,21 +1,11 @@
 import * as BackgroundFetch from 'expo-background-fetch';
-import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { getDb, uuid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
+import { notifyLocal } from '@/lib/notifications-local';
 import type { Watchdog } from '@/types';
 
 export const WATCHDOG_TASK = 'GHOST_WATCHDOG_TASK';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
 
 TaskManager.defineTask(WATCHDOG_TASK, async () => {
   try {
@@ -47,13 +37,10 @@ TaskManager.defineTask(WATCHDOG_TASK, async () => {
     // Heartbeat for interval watchdogs
     const heartbeat = rows.find((r) => r.trigger === 'interval_15m');
     if (heartbeat) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Ghost Watchdog',
-          body: `Heartbeat ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
-        },
-        trigger: null,
-      });
+      await notifyLocal(
+        'Ghost Watchdog',
+        `Heartbeat ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      );
     }
 
     return BackgroundFetch.BackgroundFetchResult.NewData;
@@ -66,13 +53,10 @@ TaskManager.defineTask(WATCHDOG_TASK, async () => {
 async function runWatchdog(wd: Watchdog): Promise<void> {
   if (wd.trigger === 'irctc_delay') {
     const train = String(wd.params.train ?? '');
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Train delay check',
-        body: `Monitoring train ${train}. No delay >15m detected (demo poll).`,
-      },
-      trigger: null,
-    });
+    await notifyLocal(
+      'Train delay check',
+      `Monitoring train ${train}. No delay >15m detected (demo poll).`,
+    );
     await logAudit('workflow', 'watchdog_irctc_delay', wd.params, 'polled', 10);
   }
 }
