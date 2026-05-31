@@ -1,4 +1,4 @@
-import { groqChat } from '@/lib/groq';
+import { agentChat } from '@/lib/agents';
 
 export interface EmailDraft {
   to: string;
@@ -11,7 +11,7 @@ export async function generateEmailDraft(
   description: string,
   recipientHint = '',
 ): Promise<EmailDraft> {
-  const raw = await groqChat(
+  const raw = await agentChat(
     [
       {
         role: 'user',

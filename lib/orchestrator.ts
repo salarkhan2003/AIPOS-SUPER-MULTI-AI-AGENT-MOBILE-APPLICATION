@@ -7,7 +7,7 @@ import { logAudit } from '@/lib/audit';
 import { formatDisplayText } from '@/lib/displayText';
 import { uuid } from '@/lib/db';
 import { EVENTS, ghostEvents } from '@/lib/events';
-import { formatGroqError, groqChat, groqSimpleReply, parseAgentJson } from '@/lib/groq';
+import { formatAgentError, agentChat, agentSimpleReply, parseAgentJson } from '@/lib/agents';
 import { memory } from '@/lib/memory';
 import { notifyLocal } from '@/lib/notifications-local';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
@@ -40,7 +40,7 @@ async function callAgent(
   userInput: string,
   context: string,
 ): Promise<OrchestratorResponse> {
-  const raw = await groqChat([
+  const raw = await agentChat([
     {
       role: 'user',
       content: `Agent role: ${agent}. User said: "${userInput}". Context: ${context.slice(0, 1500)}. Return next JSON action for this agent only.`,
@@ -213,9 +213,9 @@ export async function runGhost(userInput: string): Promise<{
   try {
     return await runGhostInner(userInput);
   } catch (err) {
-    const friendly = formatGroqError(err);
+    const friendly = formatAgentError(err);
     try {
-      const simple = await groqSimpleReply(userInput);
+      const simple = await agentSimpleReply(userInput);
       const t: ThoughtEvent = {
         id: uuid(),
         timestamp: Date.now(),
@@ -238,7 +238,7 @@ export async function runGhost(userInput: string): Promise<{
 /** Home screen predictions from Planner */
 export async function fetchPredictions(): Promise<{ id: string; title: string; subtitle: string; action?: string }[]> {
   try {
-    const raw = await groqChat(
+    const raw = await agentChat(
       [
         {
           role: 'user',

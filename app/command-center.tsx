@@ -1,5 +1,5 @@
 import { Icon } from '@/components/Icon';
-import { NeuralLog3DHub } from '@/components/NeuralLog3DHub';
+import { NeuralGraph } from '@/components/NeuralGraph';
 import { NeuralLogCard } from '@/components/NeuralLogCard';
 import { formatDisplayText } from '@/lib/displayText';
 import { EVENTS, ghostEvents } from '@/lib/events';
@@ -102,12 +102,7 @@ export default function CommandCenterScreen() {
           </View>
         </View>
 
-        <NeuralLog3DHub
-          C={C}
-          isDark={isDark}
-          thoughtCount={thoughts.length}
-          agentCount={agentsPresent.length}
-        />
+        <NeuralGraph thoughts={thoughts} C={C} isDark={isDark} />
 
         {Object.keys(agentCounts).length > 0 ? (
           <ScrollView

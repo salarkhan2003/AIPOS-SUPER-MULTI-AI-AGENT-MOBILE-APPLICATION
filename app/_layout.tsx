@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { isGhostPro } from '@/lib/entitlements';
-import { initLocalNotifications, notifyLocal, scheduleDailyBriefing } from '@/lib/notifications-local';
+import { initLocalNotifications, scheduleDailyBriefing } from '@/lib/notifications-local';
 import { prefsStorage } from '@/lib/storage';
 import { ThemeProvider, useTheme } from '@/lib/themeContext';
 import { watchdogs } from '@/lib/watchdogs';
@@ -69,6 +69,8 @@ function RootNavigator() {
         <Stack.Screen name="activity-logs" />
         <Stack.Screen name="search" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="agents" />
+        <Stack.Screen name="voice-history" />
       </Stack>
     </>
   );

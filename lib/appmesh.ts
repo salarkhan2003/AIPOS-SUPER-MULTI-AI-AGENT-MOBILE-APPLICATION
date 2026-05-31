@@ -2,7 +2,7 @@
  * App Mesh — JS bridge to Android AccessibilityService
  * Requires dev build with ghost-accessibility native module.
  */
-import { normalizePhone } from '@/lib/whatsapp';
+import { normalizePhone } from '@/lib/utils';
 import { Linking, Platform } from 'react-native';
 
 const PACKAGES: Record<string, string> = {

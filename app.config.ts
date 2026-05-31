@@ -4,7 +4,7 @@ const config: ExpoConfig = {
   name: 'Ghost AI',
   slug: 'aipos',
   owner: 'salarkhan22',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   scheme: 'aipos',
   userInterfaceStyle: 'automatic',
@@ -37,7 +37,7 @@ const config: ExpoConfig = {
       {
         image: './assets/images/splash-icon.png',
         resizeMode: 'contain',
-        backgroundColor: '#F0EDE8',
+        backgroundColor: '#12081F',
       },
     ],
     [
@@ -56,8 +56,10 @@ const config: ExpoConfig = {
   ],
   experiments: { typedRoutes: true },
   extra: {
-    groqKeySet: !!process.env.EXPO_PUBLIC_GROQ_API_KEY,
-    groqApiKey: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
+    // Both keys baked into APK at build time — app reads from here at runtime on device
+    groqKeySet: !!(process.env.EXPO_PUBLIC_GROQ_API_KEY || process.env.EXPO_PUBLIC_OPENROUTER_API_KEY),
+    groqApiKey:      process.env.EXPO_PUBLIC_GROQ_API_KEY      ?? '',
+    openRouterApiKey: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? '',
     eas: { projectId: '49785886-b3c9-4200-8d32-37265f1d22ae' },
   },
 };

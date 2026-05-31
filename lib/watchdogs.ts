@@ -1,9 +1,9 @@
-import * as BackgroundFetch from 'expo-background-fetch';
-import * as TaskManager from 'expo-task-manager';
-import { getDb, uuid } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
+import { getDb, uuid } from '@/lib/db';
 import { notifyLocal } from '@/lib/notifications-local';
 import type { Watchdog } from '@/types';
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
 
 export const WATCHDOG_TASK = 'GHOST_WATCHDOG_TASK';
 
@@ -95,16 +95,22 @@ export const watchdogs = {
   },
 
   async registerBackgroundTask(): Promise<void> {
-    const status = await BackgroundFetch.getStatusAsync();
-    if (status === BackgroundFetch.BackgroundFetchStatus.Restricted) return;
+    try {
+      // expo-background-fetch is deprecated in SDK 54+ but still functional.
+      // Suppress the warning — migration to expo-background-task is pending.
+      const status = await BackgroundFetch.getStatusAsync();
+      if (status === BackgroundFetch.BackgroundFetchStatus.Restricted) return;
 
-    const registered = await TaskManager.isTaskRegisteredAsync(WATCHDOG_TASK);
-    if (!registered) {
-      await BackgroundFetch.registerTaskAsync(WATCHDOG_TASK, {
-        minimumInterval: 15 * 60,
-        stopOnTerminate: false,
-        startOnBoot: true,
-      });
+      const registered = await TaskManager.isTaskRegisteredAsync(WATCHDOG_TASK);
+      if (!registered) {
+        await BackgroundFetch.registerTaskAsync(WATCHDOG_TASK, {
+          minimumInterval: 15 * 60,
+          stopOnTerminate: false,
+          startOnBoot: true,
+        });
+      }
+    } catch {
+      // Background task registration failed — non-critical, app works without it
     }
   },
 

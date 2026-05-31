@@ -202,3 +202,184 @@ export const calendarStorage = {
       .sort((a, b) => a.time.localeCompare(b.time));
   },
 };
+
+// ── Saved Email Recipients ─────────────────────────────────────
+
+export interface SavedEmailRecipient {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const EMAIL_RECIPIENTS_KEY = 'ghost:email_recipients';
+
+export const emailRecipientsStorage = {
+  async list(): Promise<SavedEmailRecipient[]> {
+    return (await storage.get<SavedEmailRecipient[]>(EMAIL_RECIPIENTS_KEY)) ?? [];
+  },
+  async add(name: string, email: string): Promise<SavedEmailRecipient> {
+    const list = await emailRecipientsStorage.list();
+    const entry: SavedEmailRecipient = { id: `er-${Date.now()}`, name: name.trim(), email: email.trim().toLowerCase() };
+    await storage.set(EMAIL_RECIPIENTS_KEY, [...list, entry]);
+    return entry;
+  },
+  async update(id: string, patch: Partial<Pick<SavedEmailRecipient, 'name' | 'email'>>): Promise<void> {
+    const list = await emailRecipientsStorage.list();
+    await storage.set(EMAIL_RECIPIENTS_KEY, list.map((r) => r.id === id ? { ...r, ...patch } : r));
+  },
+  async remove(id: string): Promise<void> {
+    const list = await emailRecipientsStorage.list();
+    await storage.set(EMAIL_RECIPIENTS_KEY, list.filter((r) => r.id !== id));
+  },
+  async findByNameOrEmail(query: string): Promise<SavedEmailRecipient | null> {
+    const list = await emailRecipientsStorage.list();
+    const q = query.toLowerCase().trim();
+    return list.find((r) => r.email.toLowerCase() === q || r.name.toLowerCase().includes(q)) ?? null;
+  },
+};
+
+// ── Agent Prefs ────────────────────────────────────────────────
+
+export interface AgentConfig {
+  id: string;
+  name: string;
+  role: string;
+  provider: 'groq' | 'openrouter';
+  enabled: boolean;
+  description: string;
+  color: string;
+}
+
+const AGENTS_KEY = 'ghost:agents';
+
+const DEFAULT_AGENTS: AgentConfig[] = [
+  {
+    id: 'agent-groq',
+    name: 'Ghost Groq',
+    role: 'Primary AGI — planning, execution, memory, research',
+    provider: 'groq',
+    enabled: true,
+    description: 'Powered by Groq LLaMA 3.3 70B. Handles all core tasks: planning, tool execution, WhatsApp, reminders, research.',
+    color: '#9D8AFF',
+  },
+  {
+    id: 'agent-openai',
+    name: 'Ghost OpenAI',
+    role: 'Fallback AGI — activates when Groq is unavailable',
+    provider: 'openrouter',
+    enabled: true,
+    description: 'Powered by OpenAI-compatible API. Automatically activates as fallback when Groq rate-limits or is unreachable.',
+    color: '#5CE1E6',
+  },
+];
+
+export const agentConfigStorage = {
+  async list(): Promise<AgentConfig[]> {
+    const saved = await storage.get<AgentConfig[]>(AGENTS_KEY);
+    if (!saved || saved.length === 0) {
+      await storage.set(AGENTS_KEY, DEFAULT_AGENTS);
+      return DEFAULT_AGENTS;
+    }
+    return saved;
+  },
+  async setEnabled(id: string, enabled: boolean): Promise<void> {
+    const list = await agentConfigStorage.list();
+    await storage.set(AGENTS_KEY, list.map((a) => a.id === id ? { ...a, enabled } : a));
+  },
+  async reset(): Promise<void> {
+    await storage.set(AGENTS_KEY, DEFAULT_AGENTS);
+  },
+};
+
+// ── Goals ──────────────────────────────────────────────────────
+
+export interface SavedGoal {
+  id: string;
+  label: string;
+  pct: number;
+  color: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+const GOALS_KEY = 'ghost:goals';
+
+const DEFAULT_GOALS: SavedGoal[] = [
+  { id: 'g1', label: 'Railway Robot', pct: 67, color: '#9D8AFF', createdAt: 0, updatedAt: 0 },
+  { id: 'g2', label: 'Ghost AI',      pct: 42, color: '#5CE1E6', createdAt: 0, updatedAt: 0 },
+  { id: 'g3', label: 'Job Search',    pct: 18, color: '#FFC857', createdAt: 0, updatedAt: 0 },
+];
+
+export const goalsStorage = {
+  async list(): Promise<SavedGoal[]> {
+    const saved = await storage.get<SavedGoal[]>(GOALS_KEY);
+    if (!saved || saved.length === 0) {
+      await storage.set(GOALS_KEY, DEFAULT_GOALS);
+      return DEFAULT_GOALS;
+    }
+    return saved;
+  },
+  async save(goals: SavedGoal[]): Promise<void> {
+    await storage.set(GOALS_KEY, goals);
+  },
+  async add(label: string, pct: number, color: string): Promise<SavedGoal> {
+    const list = await goalsStorage.list();
+    const entry: SavedGoal = { id: `goal-${Date.now()}`, label, pct, color, createdAt: Date.now(), updatedAt: Date.now() };
+    await storage.set(GOALS_KEY, [...list, entry]);
+    return entry;
+  },
+  async update(id: string, patch: Partial<Pick<SavedGoal, 'label' | 'pct' | 'color'>>): Promise<void> {
+    const list = await goalsStorage.list();
+    await storage.set(GOALS_KEY, list.map((g) => g.id === id ? { ...g, ...patch, updatedAt: Date.now() } : g));
+  },
+  async remove(id: string): Promise<void> {
+    const list = await goalsStorage.list();
+    await storage.set(GOALS_KEY, list.filter((g) => g.id !== id));
+  },
+};
+
+// ── Voice Sessions (each open/close = one session) ─────────────
+
+export interface VoiceSession {
+  id: string;
+  startedAt: number;
+  endedAt: number;
+  messageCount: number;
+  preview: string; // first user message
+}
+
+const VOICE_SESSIONS_KEY = 'ghost:voice_sessions';
+
+export const voiceSessionStorage = {
+  async list(): Promise<VoiceSession[]> {
+    return (await storage.get<VoiceSession[]>(VOICE_SESSIONS_KEY)) ?? [];
+  },
+  async start(): Promise<string> {
+    const id = `vs-${Date.now()}`;
+    const sessions = await voiceSessionStorage.list();
+    const session: VoiceSession = { id, startedAt: Date.now(), endedAt: 0, messageCount: 0, preview: '' };
+    await storage.set(VOICE_SESSIONS_KEY, [session, ...sessions].slice(0, 50));
+    return id;
+  },
+  async end(id: string, messageCount: number, preview: string): Promise<void> {
+    const sessions = await voiceSessionStorage.list();
+    await storage.set(VOICE_SESSIONS_KEY, sessions.map((s) =>
+      s.id === id ? { ...s, endedAt: Date.now(), messageCount, preview } : s,
+    ));
+  },
+  async getEntries(sessionId: string): Promise<VoiceEntry[]> {
+    const all = await storage.get<VoiceEntry[]>(`ghost:voice_session_${sessionId}`) ?? [];
+    return all;
+  },
+  async appendEntry(sessionId: string, entry: Omit<VoiceEntry, 'id' | 'timestamp'>): Promise<VoiceEntry> {
+    const existing = await voiceSessionStorage.getEntries(sessionId);
+    const newEntry: VoiceEntry = { id: `ve-${Date.now()}`, timestamp: Date.now(), ...entry };
+    await storage.set(`ghost:voice_session_${sessionId}`, [...existing, newEntry]);
+    return newEntry;
+  },
+  async clearSession(sessionId: string): Promise<void> {
+    await storage.remove(`ghost:voice_session_${sessionId}`);
+    const sessions = await voiceSessionStorage.list();
+    await storage.set(VOICE_SESSIONS_KEY, sessions.filter((s) => s.id !== sessionId));
+  },
+};

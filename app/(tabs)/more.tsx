@@ -12,6 +12,8 @@ function buildSections(C: ReturnType<typeof useTheme>['colors']): { title: strin
     {
       title: 'AI & Agents',
       items: [
+        { label: 'AGI Agents', href: '/agents', icon: 'brain', color: '#9D8AFF', bg: '#9D8AFF1A' },
+        { label: 'Voice History', href: '/voice-history', icon: 'mic', color: C.violet, bg: C.violet + '1A' },
         { label: 'Daily Briefing', href: '/briefing', icon: 'bell', color: C.orange, bg: C.orange + '1A' },
         { label: 'Neural Log', href: '/command-center', icon: 'network', color: C.violet, bg: C.violet + '1A' },
         { label: 'Execution Monitor', href: '/execution-monitor', icon: 'activity', color: C.coral, bg: C.coral + '1A' },
