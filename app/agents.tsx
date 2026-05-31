@@ -3,8 +3,10 @@ import { ClayButton } from '@/components/clay/ClayButton';
 import { ClayCard } from '@/components/clay/ClayCard';
 import { ClayInput } from '@/components/clay/ClayInput';
 import { getAgentProviders } from '@/lib/agents';
-import { agentConfigStorage, prefsStorage, type AgentConfig } from '@/lib/storage';
+import { setVoiceAiEnabled } from '@/lib/auth';
+import { agentConfigStorage, deadlinesStorage, meetingsStorage, prefsStorage, tasksStorage, type AgentConfig } from '@/lib/storage';
 import { useTheme } from '@/lib/themeContext';
+import { useGhostStore } from '@/store/ghostStore';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -145,7 +147,14 @@ function CreateModal({ type, onClose }: { type: 'task' | 'meeting' | 'deadline';
   const handleSave = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 500));
+    const today = new Date().toISOString().split('T')[0];
+    if (type === 'task') {
+      await tasksStorage.add({ title, priority: 'medium', category: 'other', repeat: 'none' });
+    } else if (type === 'meeting') {
+      await meetingsStorage.add({ title, date: today, time: '10:00', category: 'other', priority: 'medium', repeat: 'none' });
+    } else if (type === 'deadline') {
+      await deadlinesStorage.add({ title, dueDate: today, priority: 'medium', category: 'other', repeat: 'none' });
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setSaving(false);
     onClose();
@@ -200,10 +209,10 @@ const modalStyles = StyleSheet.create({
 export default function AgentsScreen() {
   const insets = useSafeAreaInsets();
   const { colors: C } = useTheme();
+  const { voiceAiEnabled, setVoiceAiEnabled: setStoreVoiceAiEnabled } = useGhostStore();
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('male');
   const [playingVoice, setPlayingVoice] = useState<'male' | 'female' | null>(null);
-  const [bgVoice, setBgVoice] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState<'task' | 'meeting' | 'deadline' | null>(null);
   const [selectedPersonality, setSelectedPersonality] = useState<VoicePersonality>('normal');
 
@@ -212,7 +221,6 @@ export default function AgentsScreen() {
     prefsStorage.get().then((p) => {
       const savedGender = (p as any).voiceGender as 'male' | 'female' | undefined;
       if (savedGender) setVoiceGender(savedGender);
-      setBgVoice(p.backgroundVoiceAgentEnabled);
       const savedPers = (p as any).voicePersonality as VoicePersonality | undefined;
       if (savedPers) setSelectedPersonality(savedPers);
     });
@@ -261,11 +269,11 @@ export default function AgentsScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const toggleBgVoice = async () => {
-    const newVal = !bgVoice;
-    setBgVoice(newVal);
-    const prefs = await prefsStorage.get();
-    await prefsStorage.set({ ...prefs, backgroundVoiceAgentEnabled: newVal });
+  const toggleVoiceAi = async () => {
+    const newVal = !voiceAiEnabled;
+    setStoreVoiceAiEnabled(newVal);
+    await setVoiceAiEnabled(newVal);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const quickItems = [
@@ -312,14 +320,14 @@ export default function AgentsScreen() {
 
         <ClayCard>
           <View style={styles.toggleRow}>
-            <View style={[styles.toggleIcon, { backgroundColor: '#F5C842' + '20' }]}>
-              <Icon name="mic" size={22} color="#F5C842" />
+            <View style={[styles.toggleIcon, { backgroundColor: '#6B4EFF' + '20' }]}>
+              <Icon name="mic" size={22} color="#6B4EFF" />
             </View>
             <View style={styles.toggleInfo}>
-              <Text style={[styles.toggleLabel, { color: C.text }]}>Background Voice</Text>
-              <Text style={[styles.toggleDesc, { color: C.textMid }]}>Greets you when app opens</Text>
+              <Text style={[styles.toggleLabel, { color: C.text }]}>Voice AI</Text>
+              <Text style={[styles.toggleDesc, { color: C.textMid }]}>Auto greets and responds via voice</Text>
             </View>
-            <Switch value={bgVoice} onValueChange={toggleBgVoice} trackColor={{ false: C.border, true: '#F5C842' + '40' }} thumbColor={bgVoice ? '#F5C842' : C.textLight} />
+            <Switch value={voiceAiEnabled} onValueChange={toggleVoiceAi} trackColor={{ false: C.border, true: '#6B4EFF' + '40' }} thumbColor={voiceAiEnabled ? '#6B4EFF' : C.textLight} />
           </View>
         </ClayCard>
 

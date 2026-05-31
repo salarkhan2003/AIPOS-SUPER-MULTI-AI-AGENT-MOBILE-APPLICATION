@@ -2,16 +2,23 @@
  * Ghost Orchestrator — 8 agents via Groq JSON mode
  * Flow: User Input → Planner → Research → Executor → Verifier → Response
  */
+import { agentChat, agentSimpleReply, formatAgentError, parseAgentJson } from '@/lib/agents';
 import * as appmesh from '@/lib/appmesh';
 import { logAudit } from '@/lib/audit';
-import { formatDisplayText } from '@/lib/displayText';
 import { uuid } from '@/lib/db';
+import { formatDisplayText } from '@/lib/displayText';
 import { EVENTS, ghostEvents } from '@/lib/events';
-import { formatAgentError, agentChat, agentSimpleReply, parseAgentJson } from '@/lib/agents';
 import { memory } from '@/lib/memory';
 import { notifyLocal } from '@/lib/notifications-local';
-import { sendWhatsAppMessage } from '@/lib/whatsapp';
+import {
+  deadlinesStorage,
+  meetingsStorage,
+  tasksStorage,
+  type Category,
+  type Priority,
+} from '@/lib/storage';
 import { watchdogs } from '@/lib/watchdogs';
+import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import type { AgentRole, OrchestratorResponse, ThoughtEvent } from '@/types';
 
 const MAX_STEPS = 6;
@@ -135,6 +142,62 @@ export async function executeTool(
     }
     case 'browser_command':
       return 'browser_command queued — open Browser screen';
+    case 'list_tasks': {
+      const tasks = await tasksStorage.list();
+      if (tasks.length === 0) return 'No tasks found';
+      return tasks.map(t => `• ${t.title}${t.completed ? ' (completed)' : ''}`).join('\n');
+    }
+    case 'list_meetings': {
+      const meetings = await meetingsStorage.list();
+      if (meetings.length === 0) return 'No meetings found';
+      return meetings.map(m => `• ${m.title} on ${m.date} at ${m.time}`).join('\n');
+    }
+    case 'list_deadlines': {
+      const deadlines = await deadlinesStorage.list();
+      if (deadlines.length === 0) return 'No deadlines found';
+      return deadlines.map(d => `• ${d.title} due ${d.dueDate}`).join('\n');
+    }
+    case 'create_task': {
+      const title = String(params.title ?? '');
+      if (!title) return 'Task title required';
+      await tasksStorage.add({
+        title,
+        description: params.description ? String(params.description) : undefined,
+        priority: (params.priority as Priority) ?? 'medium',
+        category: (params.category as Category) ?? 'personal',
+        dueDate: params.dueDate ? String(params.dueDate) : undefined,
+        repeat: 'none',
+      });
+      return `Created task: ${title}`;
+    }
+    case 'create_meeting': {
+      const title = String(params.title ?? '');
+      if (!title) return 'Meeting title required';
+      await meetingsStorage.add({
+        title,
+        description: params.description ? String(params.description) : undefined,
+        date: params.date ? String(params.date) : new Date().toISOString().split('T')[0],
+        time: params.time ? String(params.time) : '10:00',
+        location: params.location ? String(params.location) : undefined,
+        category: (params.category as Category) ?? 'personal',
+        priority: (params.priority as Priority) ?? 'medium',
+        repeat: 'none',
+      });
+      return `Created meeting: ${title}`;
+    }
+    case 'create_deadline': {
+      const title = String(params.title ?? '');
+      if (!title) return 'Deadline title required';
+      await deadlinesStorage.add({
+        title,
+        description: params.description ? String(params.description) : undefined,
+        dueDate: params.dueDate ? String(params.dueDate) : new Date().toISOString().split('T')[0],
+        category: (params.category as Category) ?? 'personal',
+        priority: (params.priority as Priority) ?? 'medium',
+        repeat: 'none',
+      });
+      return `Created deadline: ${title}`;
+    }
     case 'respond':
       return String(params.message ?? params.text ?? 'Done.');
     default:
@@ -178,7 +241,7 @@ async function runGhostInner(userInput: string): Promise<{
     }
 
     const execAgent: AgentRole = step.agent === 'planner' ? 'executor' : (step.agent as AgentRole);
-    if (['deep_link', 'search_app', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text', 'whatsapp_send'].includes(step.action)) {
+    if (['deep_link', 'search_app', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text', 'whatsapp_send', 'list_tasks', 'list_meetings', 'list_deadlines', 'create_task', 'create_meeting', 'create_deadline'].includes(step.action)) {
       const result = await executeTool(step.action, step.params);
       await logAudit(execAgent, step.action, step.params, result, 20);
       thoughts.push(emitThought('executor', result, step));

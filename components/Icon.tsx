@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Clock,
   CreditCard,
+  Edit3,
   FileText,
   GitBranch,
   Globe,
@@ -88,6 +89,8 @@ export const Icons = {
   heart: Heart,
   speaker: Speaker,
   x: X,
+  edit: Edit3,
+  add: Plus,
 } as const;
 
 export type IconName = keyof typeof Icons;

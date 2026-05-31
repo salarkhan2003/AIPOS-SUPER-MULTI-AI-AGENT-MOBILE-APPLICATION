@@ -156,12 +156,21 @@ const DEFAULT_PREFS: UserPrefs = {
 };
 
 // ── Tasks/Meetings/Deadlines ───────────────────────────────────
+export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+export type Category = 'work' | 'personal' | 'health' | 'finance' | 'education' | 'other';
+export type Repeat = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 export interface SavedTask {
   id: string;
   title: string;
   description?: string;
   completed: boolean;
+  priority: Priority;
+  category: Category;
+  dueDate?: string;
+  repeat: Repeat;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface SavedMeeting {
@@ -170,7 +179,13 @@ export interface SavedMeeting {
   description?: string;
   time: string;
   location?: string;
+  date: string;
+  duration?: string;
+  category: Category;
+  priority: Priority;
+  repeat: Repeat;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface SavedDeadline {
@@ -178,22 +193,41 @@ export interface SavedDeadline {
   title: string;
   description?: string;
   dueDate: string;
+  priority: Priority;
+  category: Category;
+  repeat: Repeat;
   createdAt: number;
+  updatedAt: number;
 }
 
 export const tasksStorage = {
   async list(): Promise<SavedTask[]> {
     return (await storage.get<SavedTask[]>(TASKS_KEY)) ?? [];
   },
-  async add(title: string, description?: string): Promise<SavedTask> {
+  async add(data: Omit<SavedTask, 'id' | 'createdAt' | 'updatedAt' | 'completed'>): Promise<SavedTask> {
     const list = await tasksStorage.list();
-    const entry: SavedTask = { id: `task-${Date.now()}`, title, description, completed: false, createdAt: Date.now() };
+    const now = Date.now();
+    const entry: SavedTask = { 
+      id: `task-${now}`, 
+      ...data, 
+      completed: false, 
+      createdAt: now, 
+      updatedAt: now 
+    };
     await storage.set(TASKS_KEY, [...list, entry]);
     return entry;
   },
+  async update(id: string, patch: Partial<Omit<SavedTask, 'id' | 'createdAt'>>): Promise<void> {
+    const list = await tasksStorage.list();
+    await storage.set(TASKS_KEY, list.map((t) => 
+      t.id === id ? { ...t, ...patch, updatedAt: Date.now() } : t
+    ));
+  },
   async toggle(id: string): Promise<void> {
     const list = await tasksStorage.list();
-    await storage.set(TASKS_KEY, list.map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
+    await storage.set(TASKS_KEY, list.map((t) => 
+      t.id === id ? { ...t, completed: !t.completed, updatedAt: Date.now() } : t
+    ));
   },
   async remove(id: string): Promise<void> {
     const list = await tasksStorage.list();
@@ -205,11 +239,23 @@ export const meetingsStorage = {
   async list(): Promise<SavedMeeting[]> {
     return (await storage.get<SavedMeeting[]>(MEETINGS_KEY)) ?? [];
   },
-  async add(title: string, time: string, description?: string, location?: string): Promise<SavedMeeting> {
+  async add(data: Omit<SavedMeeting, 'id' | 'createdAt' | 'updatedAt'>): Promise<SavedMeeting> {
     const list = await meetingsStorage.list();
-    const entry: SavedMeeting = { id: `meeting-${Date.now()}`, title, time, description, location, createdAt: Date.now() };
+    const now = Date.now();
+    const entry: SavedMeeting = { 
+      id: `meeting-${now}`, 
+      ...data, 
+      createdAt: now, 
+      updatedAt: now 
+    };
     await storage.set(MEETINGS_KEY, [...list, entry]);
     return entry;
+  },
+  async update(id: string, patch: Partial<Omit<SavedMeeting, 'id' | 'createdAt'>>): Promise<void> {
+    const list = await meetingsStorage.list();
+    await storage.set(MEETINGS_KEY, list.map((m) => 
+      m.id === id ? { ...m, ...patch, updatedAt: Date.now() } : m
+    ));
   },
   async remove(id: string): Promise<void> {
     const list = await meetingsStorage.list();
@@ -221,11 +267,23 @@ export const deadlinesStorage = {
   async list(): Promise<SavedDeadline[]> {
     return (await storage.get<SavedDeadline[]>(DEADLINES_KEY)) ?? [];
   },
-  async add(title: string, dueDate: string, description?: string): Promise<SavedDeadline> {
+  async add(data: Omit<SavedDeadline, 'id' | 'createdAt' | 'updatedAt'>): Promise<SavedDeadline> {
     const list = await deadlinesStorage.list();
-    const entry: SavedDeadline = { id: `deadline-${Date.now()}`, title, dueDate, description, createdAt: Date.now() };
+    const now = Date.now();
+    const entry: SavedDeadline = { 
+      id: `deadline-${now}`, 
+      ...data, 
+      createdAt: now, 
+      updatedAt: now 
+    };
     await storage.set(DEADLINES_KEY, [...list, entry]);
     return entry;
+  },
+  async update(id: string, patch: Partial<Omit<SavedDeadline, 'id' | 'createdAt'>>): Promise<void> {
+    const list = await deadlinesStorage.list();
+    await storage.set(DEADLINES_KEY, list.map((d) => 
+      d.id === id ? { ...d, ...patch, updatedAt: Date.now() } : d
+    ));
   },
   async remove(id: string): Promise<void> {
     const list = await deadlinesStorage.list();

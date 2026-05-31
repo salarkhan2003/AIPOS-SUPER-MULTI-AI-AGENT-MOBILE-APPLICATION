@@ -7,6 +7,7 @@ const KEYS = {
   userEmail: 'ghost_user_email',
   userGender: 'ghost_user_gender',
   authenticated: 'ghost_authenticated',
+  voiceAiEnabled: 'ghost_voice_ai_enabled',
 } as const;
 
 export type AuthSession = {
@@ -16,16 +17,18 @@ export type AuthSession = {
   name: string;
   email: string;
   gender: string;
+  voiceAiEnabled: boolean;
 };
 
 export async function getSession(): Promise<AuthSession> {
-  const [onb, guest, auth, name, email, gender] = await Promise.all([
+  const [onb, guest, auth, name, email, gender, voiceEnabled] = await Promise.all([
     SecureStore.getItemAsync(KEYS.onboarding),
     SecureStore.getItemAsync(KEYS.guest),
     SecureStore.getItemAsync(KEYS.authenticated),
     SecureStore.getItemAsync(KEYS.userName),
     SecureStore.getItemAsync(KEYS.userEmail),
     SecureStore.getItemAsync(KEYS.userGender),
+    SecureStore.getItemAsync(KEYS.voiceAiEnabled),
   ]);
   const savedName = name?.trim();
   return {
@@ -35,6 +38,7 @@ export async function getSession(): Promise<AuthSession> {
     name: savedName && savedName !== 'Guest' ? savedName : savedName || '',
     email: email ?? '',
     gender: gender ?? '',
+    voiceAiEnabled: voiceEnabled !== 'false', // default true
   };
 }
 
@@ -47,8 +51,13 @@ export async function finishOnboardingWithNickname(nickname: string): Promise<vo
     SecureStore.setItemAsync(KEYS.guest, 'true'),
     SecureStore.setItemAsync(KEYS.authenticated, 'false'),
     SecureStore.setItemAsync(KEYS.userName, name),
+    SecureStore.setItemAsync(KEYS.voiceAiEnabled, 'true'),
     SecureStore.deleteItemAsync(KEYS.userEmail),
   ]);
+}
+
+export async function setVoiceAiEnabled(enabled: boolean): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.voiceAiEnabled, enabled ? 'true' : 'false');
 }
 
 export async function completeOnboarding(): Promise<void> {

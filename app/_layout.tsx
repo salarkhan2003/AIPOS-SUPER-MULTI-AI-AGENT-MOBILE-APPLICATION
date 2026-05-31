@@ -55,7 +55,7 @@ const getWelcomeMessages = (userName: string, personality: VoicePersonality) => 
 
 function RootNavigator() {
   const { colors, isDark } = useTheme();
-  const { setPro, setAuth, setOnboarded, setHydrated } = useGhostStore();
+  const { setPro, setAuth, setOnboarded, setHydrated, setVoiceAiEnabled } = useGhostStore();
 
   useEffect(() => {
     (async () => {
@@ -69,6 +69,7 @@ function RootNavigator() {
         name: userName,
         email: session.email,
       });
+      setVoiceAiEnabled(session.voiceAiEnabled);
 
       const prefs = await prefsStorage.get();
       const notifOk = await initLocalNotifications();
@@ -83,24 +84,29 @@ function RootNavigator() {
       setHydrated(true);
       SplashScreen.hideAsync();
 
-      if (prefs.backgroundVoiceAgentEnabled) {
+      if (session.voiceAiEnabled) {
         const today = new Date().toDateString();
         const lastWelcome = await storage.get<string>('lastWelcomeDay');
-        if (lastWelcome !== today) {
+        const isFirstTime = !session.hasOnboarded;
+        if (isFirstTime || lastWelcome !== today) {
           const personality = (prefs as any).voicePersonality || 'normal';
           const welcomeMessages = getWelcomeMessages(userName, personality);
-          const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+          const randomMessage = isFirstTime
+            ? `Hey ${userName}! I'm Ghost, your personal AI assistant. So great to meet you! Let's make today amazing!`
+            : welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
           const voiceGender = (prefs as any).voiceGender || 'male';
-          Speech.speak(randomMessage, {
-            language: 'en-IN',
-            pitch: voiceGender === 'male' ? 0.75 : 1.25,
-            rate: 0.9,
-          });
+          setTimeout(() => {
+            Speech.speak(randomMessage, {
+              language: 'en-IN',
+              pitch: voiceGender === 'male' ? 0.75 : 1.25,
+              rate: 0.9,
+            });
+          }, isFirstTime ? 3000 : 1000); // 3 sec after first time, 1 sec otherwise
           await storage.set('lastWelcomeDay', today);
         }
       }
     })();
-  }, [setPro, setAuth, setOnboarded, setHydrated]);
+  }, [setPro, setAuth, setOnboarded, setHydrated, setVoiceAiEnabled]);
 
   return (
     <>

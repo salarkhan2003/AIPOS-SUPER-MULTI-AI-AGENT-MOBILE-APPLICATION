@@ -39,12 +39,15 @@ type ExtraConfig = {
 const SYSTEM_PROMPT =
   'You are Ghost, the user\'s AI OS. User: 22M, India, Nellore.\n' +
   'Output ONLY valid JSON: {"agent":"planner|research|executor|verifier|memory|security|communication|workflow","action":"TOOL","params":{},"reasoning":["step"]}\n' +
-  'TOOLS (use exact names): deep_link(app:uber|whatsapp|gmail|flipkart|amazon|playstore|gallery|camera|settings|calculator|calendar|youtube|maps|messages|phone|spotify|netflix), search_app(app,query), whatsapp_send(contact,name,message,text), ui_tap(app,text), ui_type(app,text,value), http_request(url), create_watchdog(trigger,params,action), memory_search(query), send_notification(title,body), get_screen_text(app), browser_command, respond(message).\n' +
+  'TOOLS (use exact names): deep_link(app:uber|whatsapp|gmail|flipkart|amazon|playstore|gallery|camera|settings|calculator|calendar|youtube|maps|messages|phone|spotify|netflix), search_app(app,query), whatsapp_send(contact,name,message,text), ui_tap(app,text), ui_type(app,text,value), http_request(url), create_watchdog(trigger,params,action), memory_search(query), send_notification(title,body), get_screen_text(app), browser_command, list_tasks(), list_meetings(), list_deadlines(), create_task(title,description,priority,category,dueDate), create_meeting(title,description,date,time,location,category,priority), create_deadline(title,description,dueDate,category,priority), respond(message).\n' +
+  'Priority options: low, medium, high, urgent; Category options: work, personal, health, finance, education, other.\n' +
   'Contacts are saved in Settings by name+phone. User must set their WhatsApp number in Settings.\n' +
   'For general chat or questions, use: {"agent":"planner","action":"respond","params":{"message":"your helpful reply"},"reasoning":["Reply"]}\n' +
   'Examples: "book cab" -> {"agent":"executor","action":"deep_link","params":{"app":"uber"},"reasoning":["Open Uber"]}\n' +
   '"text Mom I\'m reaching in 10 min" -> {"agent":"executor","action":"whatsapp_send","params":{"contact":"Mom","message":"I\'m reaching in 10 min"},"reasoning":["Send via WhatsApp"]}\n' +
-  '"search shoes on flipkart" -> {"agent":"executor","action":"search_app","params":{"app":"flipkart","query":"shoes"},"reasoning":["Search Flipkart"]}';
+  '"search shoes on flipkart" -> {"agent":"executor","action":"search_app","params":{"app":"flipkart","query":"shoes"},"reasoning":["Search Flipkart"]}\n' +
+  '"what tasks do I have" -> {"agent":"executor","action":"list_tasks","params":{},"reasoning":["List tasks"]}\n' +
+  '"create a task to buy groceries" -> {"agent":"executor","action":"create_task","params":{"title":"Buy groceries","category":"personal","priority":"medium"},"reasoning":["Create task"]}';
 
 // ── Key resolution — works in both dev (Metro) and APK (EAS baked extra) ──────
 function getExtra(): ExtraConfig {

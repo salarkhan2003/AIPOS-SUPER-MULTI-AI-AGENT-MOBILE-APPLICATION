@@ -93,14 +93,21 @@ export function ClayTabBar({ state, navigation }: BottomTabBarProps) {
     const route = state.routes[routeIndex];
     if (!route) return null;
     const active = state.index === routeIndex;
+
+    const onPress = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+      if (!active && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
     return (
-      <Pressable
-        key={route.key}
-        style={S.tab}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          navigation.navigate(route.name);
-        }}>
+      <Pressable key={route.key} style={S.tab} onPress={onPress}>
         <View style={[S.iconWrap, active && { backgroundColor: C.violet + '22' }]}>
           <Icon name={tab.icon} size={22} color={active ? C.violet : C.textLight} />
         </View>
