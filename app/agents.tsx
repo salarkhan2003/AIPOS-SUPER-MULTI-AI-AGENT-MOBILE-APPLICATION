@@ -280,9 +280,14 @@ export default function AgentsScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: insets.top + 8 }}>
         <View style={styles.header}>
-          <View>
-            <Text style={[styles.title, { color: C.text }]}>Agents</Text>
-            <Text style={[styles.subtitle, { color: C.textMid }]}>Configure your AI team</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: C.surface }]}>
+              <Icon name="back" size={20} color={C.text} />
+            </Pressable>
+            <View>
+              <Text style={[styles.title, { color: C.text }]}>Agents</Text>
+              <Text style={[styles.subtitle, { color: C.textMid }]}>Configure your AI team</Text>
+            </View>
           </View>
           <Pressable style={[styles.resetBtn, { backgroundColor: C.surface }]} onPress={handleReset}>
             <Icon name="refresh-ccw" size={20} color={C.textMid} />
@@ -379,6 +384,7 @@ export default function AgentsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, fontWeight: '500' },
