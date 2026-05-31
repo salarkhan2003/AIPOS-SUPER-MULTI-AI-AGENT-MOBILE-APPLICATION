@@ -1,12 +1,12 @@
 # Ghost AI (AIPOS) — Personal AI Operating System
 
-Android-first multi-agent assistant with **Groq API**, **SQLite memory**, **App Mesh** (AccessibilityService), **background watchdogs**, **voice STT/TTS**, **themed notifications**, **WhatsApp messaging**, **calendar**, and **light/dark themes**.
+Android-first multi-agent assistant with **Groq API**, **SQLite memory**, **App Mesh** (AccessibilityService), **background watchdogs**, **voice STT/TTS**, **themed notifications**, **WhatsApp messaging**, **calendar**, **email assistant**, and **light/dark themes**.
 
 ## Quick start
 
 ```bash
 cd aipos
-cp .env.example .env   # add EXPO_PUBLIC_GROQ_API_KEY
+cp .env.example .env   # add EXPO_PUBLIC_GROQ_API_KEY (and EXPO_PUBLIC_OPENROUTER_API_KEY optionally)
 npm install
 ```
 
@@ -40,6 +40,13 @@ On first launch, allow **notifications** when prompted (required on Android 13+)
 | **Dark mode** | Settings → Theme: Light / Dark / System — colorful accents preserved |
 | **Calendar** | More → Calendar — add events locally, set reminders |
 | **Watchdogs** | Workflows screen — background alerts every 15 min (dev build) |
+| **Voice agent with male/female voices** | Agents → select voice type, preview, and save |
+| **Background voice welcome** | Agents → enable Background voice for daily greeting |
+| **Voice history with delete** | Voice History screen — delete single or all conversations |
+| **Agents page with bento UI** | Agents tab/Agents screen — manage primary and fallback agents |
+| **Quick create tasks/meetings/deadlines** | Agents page → use quick create buttons |
+| **Terms of Service & Privacy Policy** | Settings → Legal section to read our policies |
+| **Email Assistant** | Email Assistant screen → compose email drafts with nicknames for contacts |
 
 ## Setup checklist
 
@@ -48,6 +55,11 @@ On first launch, allow **notifications** when prompted (required on Android 13+)
 3. **Permissions** → enable Accessibility for App Mesh (optional, for UI automation)
 4. **Home / Voice** → *"Hey Ghost, text Mom I'm reaching in 10 min"*
 5. **Settings** → send test notification to verify APK notifications
+6. **Email contacts** → Email Assistant → Contacts tab to add nicknames for email recipients
+
+## Email Assistant Note
+
+Currently, the email assistant uses `mailto://` links which open your device's default email app (Gmail/Outlook) pre-filled with the draft email. You just need to tap Send once in the email app. Direct email sending from within Ghost AI requires an email service API (like SendGrid or Mailgun) which you can configure with your own API keys if needed.
 
 ## Architecture
 
@@ -62,6 +74,7 @@ On first launch, allow **notifications** when prompted (required on Android 13+)
 | Memory | `lib/memory.ts` |
 | Watchdogs | `lib/watchdogs.ts` |
 | Voice | `lib/voice.ts` |
+| Email Drafting | `lib/emailDraft.ts`, `app/email-assistant.tsx` |
 
 ## Building APK with notifications
 
@@ -71,6 +84,15 @@ On first launch, allow **notifications** when prompted (required on Android 13+)
 4. Settings → **Send test notification**
 
 Notifications use `expo-notifications` with Android channels (`ghost-default`, `ghost-watchdogs`, `ghost-briefing`, `ghost-tasks`) and accent colors matching the app theme.
+
+## Production Readiness Checklist
+
+- [x] App icon and splash screen updated with custom logo
+- [x] Welcome/onboarding screens updated with new design
+- [x] All critical components functioning
+- [x] No missing dependencies
+- [x] TypeScript errors resolved
+- [x] README updated with full feature set
 
 ## Security
 

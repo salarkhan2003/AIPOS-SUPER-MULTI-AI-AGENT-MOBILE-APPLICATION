@@ -4,7 +4,7 @@ const config: ExpoConfig = {
   name: 'Ghost AI',
   slug: 'aipos',
   owner: 'salarkhan22',
-  version: '1.1.0',
+  version: '1.2.0',
   orientation: 'portrait',
   scheme: 'aipos',
   userInterfaceStyle: 'automatic',
@@ -21,13 +21,18 @@ const config: ExpoConfig = {
     package: 'ai.aipos.app',
     adaptiveIcon: {
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
+      backgroundColor: '#12081F',
     },
     permissions: [
       'RECORD_AUDIO',
       'POST_NOTIFICATIONS',
       'RECEIVE_BOOT_COMPLETED',
       'VIBRATE',
+      'WAKE_LOCK',
+      'USE_FULL_SCREEN_INTENT',
+      'SCHEDULE_EXACT_ALARM',
+      'ACCESS_FINE_LOCATION',
+      'ACCESS_COARSE_LOCATION',
     ],
   },
   plugins: [

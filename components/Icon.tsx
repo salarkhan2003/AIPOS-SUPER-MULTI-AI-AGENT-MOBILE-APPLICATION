@@ -1,6 +1,7 @@
 import { Clay } from '@/constants/clay';
 import {
   Activity,
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
@@ -9,29 +10,37 @@ import {
   Brain,
   Calendar,
   Check,
+  CheckSquare,
   ChevronRight,
+  Clock,
   CreditCard,
   FileText,
   GitBranch,
   Globe,
   Grid2x2 as GridIcon,
+  Heart,
   Layers,
   List,
+  Lock,
   Mail,
   MessageCircle,
   Mic,
   MoreHorizontal,
   Navigation,
   Network,
+  Plus,
+  RefreshCw,
   Search,
   Settings,
   Shield,
   Sparkles,
+  Speaker,
   Terminal,
   User,
+  Volume2,
   X,
   Zap,
-  type LucideIcon,
+  type LucideIcon
 } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
@@ -69,6 +78,16 @@ export const Icons = {
   terminal: Terminal,
   'file-text': FileText,
   'git-branch': GitBranch,
+  alert: AlertTriangle,
+  plus: Plus,
+  clock: Clock,
+  lock: Lock,
+  'refresh-ccw': RefreshCw,
+  'volume-2': Volume2,
+  'check-square': CheckSquare,
+  heart: Heart,
+  speaker: Speaker,
+  x: X,
 } as const;
 
 export type IconName = keyof typeof Icons;

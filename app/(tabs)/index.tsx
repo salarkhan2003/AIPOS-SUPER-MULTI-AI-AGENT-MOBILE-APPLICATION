@@ -1,7 +1,7 @@
 import { Icon } from '@/components/Icon';
 import { formatDisplayText } from '@/lib/displayText';
 import { fetchPredictions, runGhost } from '@/lib/orchestrator';
-import { goalsStorage, type SavedGoal } from '@/lib/storage';
+import { deadlinesStorage, goalsStorage, meetingsStorage, tasksStorage, type SavedGoal } from '@/lib/storage';
 import { useTheme } from '@/lib/themeContext';
 import { speak } from '@/lib/voice';
 import { useGhostStore } from '@/store/ghostStore';
@@ -494,9 +494,18 @@ export default function HomeScreen() {
   const setPredictions = useGhostStore((s) => s.setPredictions);
   const [loading, setLoading]       = useState(false);
   const [activeTask, setActiveTask] = useState<string | null>(null);
+  const [tasks, setTasks] = useState(0);
+  const [meetings, setMeetings] = useState(0);
+  const [deadlines, setDeadlines] = useState(0);
 
   useEffect(() => {
     fetchPredictions().then(setPredictions);
+    // Load task/meeting/deadline counts
+    Promise.all([
+      tasksStorage.list().then(list => setTasks(list.length)),
+      meetingsStorage.list().then(list => setMeetings(list.length)),
+      deadlinesStorage.list().then(list => setDeadlines(list.length)),
+    ]).catch(() => {});
     // Refresh recommendations every hour
     const interval = setInterval(() => fetchPredictions().then(setPredictions), 60 * 60 * 1000);
     return () => clearInterval(interval);
@@ -559,7 +568,7 @@ export default function HomeScreen() {
         />
 
         {/* ── Today's Briefing ── */}
-        <TodayBriefingCard tasks={3} meetings={2} deadline={1} />
+        <TodayBriefingCard tasks={tasks} meetings={meetings} deadline={deadlines} />
 
         {/* ── AI Alert Banner (predictions[0]) ── */}
         {predictions[0] && (

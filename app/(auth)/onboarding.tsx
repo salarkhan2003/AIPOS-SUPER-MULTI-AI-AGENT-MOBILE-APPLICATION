@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StatusBar,
@@ -23,15 +24,17 @@ const { width: SCREEN_W } = Dimensions.get('window');
 
 type Slide =
   | { id: string; type: 'welcome' }
+  | { id: string; type: 'voice' }
   | { id: string; type: 'agents' }
   | { id: string; type: 'privacy' }
   | { id: string; type: 'nickname' };
 
 const SLIDES: Slide[] = [
   { id: '1', type: 'welcome' },
-  { id: '2', type: 'agents' },
-  { id: '3', type: 'privacy' },
-  { id: '4', type: 'nickname' },
+  { id: '2', type: 'voice' },
+  { id: '3', type: 'agents' },
+  { id: '4', type: 'privacy' },
+  { id: '5', type: 'nickname' },
 ];
 
 export default function OnboardingScreen() {
@@ -88,9 +91,11 @@ export default function OnboardingScreen() {
     if (item.type === 'welcome') {
       return (
         <View style={[styles.slide, { width: SCREEN_W }]}>
-          <View style={styles.logoWrap}>
-            <Icon name="brain" size={44} color="#fff" />
-          </View>
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.logo}>GHOST</Text>
           <Text style={styles.slideTitle}>Welcome to your AI OS</Text>
           <Text style={styles.slideBody}>
@@ -99,10 +104,33 @@ export default function OnboardingScreen() {
         </View>
       );
     }
+    if (item.type === 'voice') {
+      const feats = [
+        { icon: 'mic' as const, color: C.yellow, text: 'Background voice greets you when you open' },
+        { icon: 'heart' as const, color: C.coral, text: 'Choose personality: flirty, jokes, friendly, professional, serious' },
+        { icon: 'speaker' as const, color: C.violet, text: 'Voice gender selection for your preference' },
+      ];
+      return (
+        <View style={[styles.slide, { width: SCREEN_W }]}>
+          <Text style={styles.slideTitle}>Your AI, your voice</Text>
+          <Text style={styles.slideBody}>Ghost talks to you! Choose how it sounds and its personality.</Text>
+          <View style={styles.featureList}>
+            {feats.map((f) => (
+              <View key={f.text} style={styles.featureRow}>
+                <View style={[styles.featureIcon, { backgroundColor: f.color + '22' }]}>
+                  <Icon name={f.icon} size={20} color={f.color} />
+                </View>
+                <Text style={styles.featureText}>{f.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    }
     if (item.type === 'agents') {
       const feats = [
         { icon: 'network' as const, color: C.violet, text: 'Planner, Executor, Research & more' },
-        { icon: 'zap' as const, color: C.coral, text: 'Real actions: WhatsApp, Uber, reminders' },
+        { icon: 'zap' as const, color: C.coral, text: 'Open apps, search Amazon/Flipkart, send messages' },
         { icon: 'memory' as const, color: C.mint, text: 'Memory that persists across sessions' },
       ];
       return (
@@ -208,6 +236,11 @@ function makeStyles(C: ReturnType<typeof useColors>) {
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.border },
     dotActive: { width: 24 },
     slide: { flex: 1, paddingHorizontal: 28, justifyContent: 'center', alignItems: 'center' },
+    logoImage: {
+      width: 120,
+      height: 120,
+      marginBottom: 20,
+    },
     logoWrap: {
       width: 88,
       height: 88,

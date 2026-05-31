@@ -131,11 +131,17 @@ export interface UserPrefs {
   dailyBriefingHour: number;
   theme: 'light' | 'dark' | 'system';
   whatsappNumber: string;
+  backgroundVoiceAgentEnabled: boolean;
+  fullMobileAccessEnabled: boolean;
+  allowedApps: string[];
 }
 
 const PREFS_KEY = 'ghost:prefs';
 const CONTACTS_KEY = 'ghost:contacts';
 const CALENDAR_KEY = 'ghost:calendar';
+const TASKS_KEY = 'ghost:tasks';
+const MEETINGS_KEY = 'ghost:meetings';
+const DEADLINES_KEY = 'ghost:deadlines';
 
 const DEFAULT_PREFS: UserPrefs = {
   notificationsEnabled: true,
@@ -144,6 +150,87 @@ const DEFAULT_PREFS: UserPrefs = {
   dailyBriefingHour: 7,
   theme: 'light',
   whatsappNumber: '',
+  backgroundVoiceAgentEnabled: false,
+  fullMobileAccessEnabled: false,
+  allowedApps: [],
+};
+
+// ── Tasks/Meetings/Deadlines ───────────────────────────────────
+export interface SavedTask {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  createdAt: number;
+}
+
+export interface SavedMeeting {
+  id: string;
+  title: string;
+  description?: string;
+  time: string;
+  location?: string;
+  createdAt: number;
+}
+
+export interface SavedDeadline {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  createdAt: number;
+}
+
+export const tasksStorage = {
+  async list(): Promise<SavedTask[]> {
+    return (await storage.get<SavedTask[]>(TASKS_KEY)) ?? [];
+  },
+  async add(title: string, description?: string): Promise<SavedTask> {
+    const list = await tasksStorage.list();
+    const entry: SavedTask = { id: `task-${Date.now()}`, title, description, completed: false, createdAt: Date.now() };
+    await storage.set(TASKS_KEY, [...list, entry]);
+    return entry;
+  },
+  async toggle(id: string): Promise<void> {
+    const list = await tasksStorage.list();
+    await storage.set(TASKS_KEY, list.map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
+  },
+  async remove(id: string): Promise<void> {
+    const list = await tasksStorage.list();
+    await storage.set(TASKS_KEY, list.filter((t) => t.id !== id));
+  },
+};
+
+export const meetingsStorage = {
+  async list(): Promise<SavedMeeting[]> {
+    return (await storage.get<SavedMeeting[]>(MEETINGS_KEY)) ?? [];
+  },
+  async add(title: string, time: string, description?: string, location?: string): Promise<SavedMeeting> {
+    const list = await meetingsStorage.list();
+    const entry: SavedMeeting = { id: `meeting-${Date.now()}`, title, time, description, location, createdAt: Date.now() };
+    await storage.set(MEETINGS_KEY, [...list, entry]);
+    return entry;
+  },
+  async remove(id: string): Promise<void> {
+    const list = await meetingsStorage.list();
+    await storage.set(MEETINGS_KEY, list.filter((m) => m.id !== id));
+  },
+};
+
+export const deadlinesStorage = {
+  async list(): Promise<SavedDeadline[]> {
+    return (await storage.get<SavedDeadline[]>(DEADLINES_KEY)) ?? [];
+  },
+  async add(title: string, dueDate: string, description?: string): Promise<SavedDeadline> {
+    const list = await deadlinesStorage.list();
+    const entry: SavedDeadline = { id: `deadline-${Date.now()}`, title, dueDate, description, createdAt: Date.now() };
+    await storage.set(DEADLINES_KEY, [...list, entry]);
+    return entry;
+  },
+  async remove(id: string): Promise<void> {
+    const list = await deadlinesStorage.list();
+    await storage.set(DEADLINES_KEY, list.filter((d) => d.id !== id));
+  },
 };
 
 export const prefsStorage = {

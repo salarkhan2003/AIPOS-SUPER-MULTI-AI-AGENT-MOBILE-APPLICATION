@@ -74,6 +74,12 @@ export async function executeTool(
       const ok = await appmesh.deepLink(app, params);
       return ok ? `Opened ${app}` : `Failed to open ${app}`;
     }
+    case 'search_app': {
+      const app = String(params.app ?? '').toLowerCase();
+      const query = String(params.query ?? params.search ?? '');
+      const ok = await appmesh.searchOnApp(app, query);
+      return ok ? `Searched "${query}" on ${app}` : `Failed to search ${app}`;
+    }
     case 'ui_tap': {
       const app = String(params.app ?? 'whatsapp');
       const text = String(params.text ?? params.xpath ?? '');
@@ -172,7 +178,7 @@ async function runGhostInner(userInput: string): Promise<{
     }
 
     const execAgent: AgentRole = step.agent === 'planner' ? 'executor' : (step.agent as AgentRole);
-    if (['deep_link', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text', 'whatsapp_send'].includes(step.action)) {
+    if (['deep_link', 'search_app', 'ui_tap', 'ui_type', 'http_request', 'create_watchdog', 'memory_search', 'send_notification', 'get_screen_text', 'whatsapp_send'].includes(step.action)) {
       const result = await executeTool(step.action, step.params);
       await logAudit(execAgent, step.action, step.params, result, 20);
       thoughts.push(emitThought('executor', result, step));

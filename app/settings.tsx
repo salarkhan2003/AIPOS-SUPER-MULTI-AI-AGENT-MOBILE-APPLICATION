@@ -1,11 +1,10 @@
 import { Icon } from '@/components/Icon';
 import { getSession, updateUserProfile } from '@/lib/auth';
 import {
-  cancelAllLocal,
-  initLocalNotifications,
-  notifyUser,
-  scheduleDailyBriefing,
-
+    cancelAllLocal,
+    initLocalNotifications,
+    notifyUser,
+    scheduleDailyBriefing,
 } from '@/lib/notifications-local';
 import { resetAppData } from '@/lib/resetApp';
 import { contactsStorage, prefsStorage, type SavedContact, type UserPrefs } from '@/lib/storage';
@@ -14,15 +13,15 @@ import { useGhostStore } from '@/store/ghostStore';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,6 +35,9 @@ export default function SettingsScreen() {
     dailyBriefingHour: 7,
     theme: 'light',
     whatsappNumber: '',
+    backgroundVoiceAgentEnabled: false,
+    fullMobileAccessEnabled: false,
+    allowedApps: [],
   });
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [newName, setNewName] = useState('');
@@ -231,6 +233,8 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           {[
             { key: 'notificationsEnabled' as const, label: 'Notifications', sub: 'Alerts, briefings, watchdogs', color: C.violet, icon: 'bell' as const },
+            { key: 'backgroundVoiceAgentEnabled' as const, label: 'Background voice agent', sub: 'AI greets you when app opens', color: C.yellow, icon: 'mic' as const },
+            { key: 'fullMobileAccessEnabled' as const, label: 'Full mobile access', sub: 'AI can open apps, send messages, etc.', color: C.coral, icon: 'shield' as const },
             { key: 'encryptMemory' as const, label: 'Encrypted memory', sub: 'AES-256 local encryption', color: C.mint, icon: 'shield' as const },
             { key: 'autoRunWatchdogs' as const, label: 'Auto-run watchdogs', sub: 'Execute triggers automatically', color: C.coral, icon: 'zap' as const },
           ].map((item, idx, arr) => (
@@ -250,6 +254,30 @@ export default function SettingsScreen() {
               />
             </View>
           ))}
+        </View>
+
+        <Text style={styles.sectionLabel}>LEGAL</Text>
+        <View style={styles.card}>
+          <Pressable style={[styles.row, styles.rowBorder]} onPress={() => router.push('/terms')}>
+            <View style={[styles.rowIcon, { backgroundColor: C.violet + '22' }]}>
+              <Icon name="file-text" size={16} color={C.violet} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowLabel}>Terms of Service</Text>
+              <Text style={styles.rowSub}>Read our terms</Text>
+            </View>
+            <Icon name="chevron" size={16} color={C.textLight} />
+          </Pressable>
+          <Pressable style={styles.row} onPress={() => router.push('/privacy')}>
+            <View style={[styles.rowIcon, { backgroundColor: C.mint + '22' }]}>
+              <Icon name="shield" size={16} color={C.mint} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowLabel}>Privacy Policy</Text>
+              <Text style={styles.rowSub}>Read our privacy policy</Text>
+            </View>
+            <Icon name="chevron" size={16} color={C.textLight} />
+          </Pressable>
         </View>
 
         <Text style={styles.sectionLabel}>MESSAGING · WHATSAPP</Text>
